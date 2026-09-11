@@ -143,7 +143,6 @@ export function SettingsProfile() {
         <div className="space-y-3">
           <ToggleRow label="Modo escuro" checked={profile.theme === 'dark'} onChange={toggleTheme} icon={profile.theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />} />
           <ToggleRow label="Sons de notificação" checked={profile.soundEnabled} onChange={() => updateProfile({ soundEnabled: !profile.soundEnabled })} />
-          <ToggleRow label="Ruído branco durante o foco" checked={profile.whiteNoiseEnabled} onChange={() => updateProfile({ whiteNoiseEnabled: !profile.whiteNoiseEnabled })} />
           <ToggleRow label="Notificações do navegador" checked={profile.notificationsEnabled} onChange={() => updateProfile({ notificationsEnabled: !profile.notificationsEnabled })} />
         </div>
       </div>

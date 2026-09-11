@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Sun, Moon, Bell, User, Search } from 'lucide-react';
+import { CheckCircle2, Sun, Moon, User } from 'lucide-react';
+import { NotificationBell } from './NotificationBell';
 import { useProfileStore } from '../../stores/useProfileStore';
 import { cn } from '../../lib/utils';
 import type { AppView } from '../../App';
@@ -21,7 +22,7 @@ export function Header({ view, onNavigate }: { view: AppView; onNavigate: (v: Ap
     return () => clearInterval(id);
   }, []);
 
-  const dateLabel = now.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' });
+  const dateLabel = now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
 
   return (
     <header className="fixed top-0 inset-x-0 z-40 h-16 bg-surface/90 backdrop-blur-md border-b border-border">
@@ -33,7 +34,7 @@ export function Header({ view, onNavigate }: { view: AppView; onNavigate: (v: Ap
             </div>
             <span className="font-bold text-text hidden sm:inline">Minhas Tarefas</span>
           </button>
-          <div className="hidden lg:flex items-center gap-2 pl-3 border-l border-border text-xs text-text-muted capitalize">
+          <div className="hidden lg:flex items-center gap-2 pl-3 border-l border-border text-xs text-text-muted first-letter:uppercase">
             {dateLabel}
           </div>
         </div>
@@ -56,17 +57,6 @@ export function Header({ view, onNavigate }: { view: AppView; onNavigate: (v: Ap
         </nav>
 
         <div className="flex items-center gap-2">
-          <div className="relative hidden sm:flex items-center w-48 md:w-56">
-            <Search className="absolute left-2.5 text-text-muted" size={16} />
-            <input
-              readOnly
-              placeholder="Buscar ou ⌘K..."
-              className="w-full pl-8 pr-10 py-1.5 bg-surface-hover border border-border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none"
-            />
-            <span className="absolute right-2 font-mono text-[10px] text-text-muted px-1 rounded bg-surface border border-border">
-              ⌘K
-            </span>
-          </div>
           <button
             onClick={toggleTheme}
             aria-label="Alternar tema"
@@ -74,9 +64,7 @@ export function Header({ view, onNavigate }: { view: AppView; onNavigate: (v: Ap
           >
             {profile.theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <button className="p-2 rounded-lg text-text-muted hover:bg-surface-hover hover:text-text transition-colors">
-            <Bell size={18} />
-          </button>
+          <NotificationBell onNavigate={onNavigate} />
           <button
             onClick={() => onNavigate('settings')}
             className="w-8 h-8 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-primary shrink-0"

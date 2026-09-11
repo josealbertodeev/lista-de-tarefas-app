@@ -37,7 +37,6 @@ const defaultProfile: UserProfile = {
   lastActiveDate: undefined,
   theme: 'dark',
   soundEnabled: true,
-  whiteNoiseEnabled: false,
   notificationsEnabled: true,
 };
 

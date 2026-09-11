@@ -2,7 +2,7 @@ import { Draggable } from '@hello-pangea/dnd';
 import { Clock, Timer } from 'lucide-react';
 import type { Task } from '../../types';
 import { CategoryBadge, PriorityBadge } from '../common/Badge';
-import { cn, isToday } from '../../lib/utils';
+import { cn, isToday, formatDateBR } from '../../lib/utils';
 
 export function KanbanCard({ task, index }: { task: Task; index: number }) {
   const subtaskProgress = task.subtasks.length
@@ -46,7 +46,7 @@ export function KanbanCard({ task, index }: { task: Task; index: number }) {
             {task.dueDate && (
               <span className="flex items-center gap-1">
                 <Clock size={12} />
-                {isToday(task.dueDate) ? 'Hoje' : task.dueDate}
+                {isToday(task.dueDate) ? 'Hoje' : formatDateBR(task.dueDate)}
                 {task.dueTime && `, ${task.dueTime}`}
               </span>
             )}

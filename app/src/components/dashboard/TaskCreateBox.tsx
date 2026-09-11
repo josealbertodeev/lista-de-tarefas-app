@@ -25,7 +25,6 @@ export function TaskCreateBox() {
           <PlusCircle className="text-primary" size={20} />
           <h2 className="font-semibold">Criar Nova Tarefa</h2>
         </div>
-        <span className="hidden sm:inline text-xs font-mono text-text-muted">Atalho rápido: ⌘N</span>
       </div>
 
       <div className="space-y-3">

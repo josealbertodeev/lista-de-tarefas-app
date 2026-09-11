@@ -4,7 +4,7 @@ import type { Task } from '../../types';
 import { useTaskStore } from '../../stores/useTaskStore';
 import { usePomodoroStore } from '../../stores/usePomodoroStore';
 import { CategoryBadge, PriorityBadge } from '../common/Badge';
-import { cn, isToday, isPast } from '../../lib/utils';
+import { cn, isToday, isPast, formatDateBR } from '../../lib/utils';
 import { EditTaskModal } from '../modals/EditTaskModal';
 import { ConfirmDialog } from '../modals/Modal';
 import { playTaskCompleteSound } from '../../lib/audio';
@@ -18,7 +18,7 @@ export function TaskItem({ task }: { task: Task }) {
   const isActiveFocus = activeTaskId === task.id;
 
   const overdue = !completed && isPast(task.dueDate);
-  const dueLabel = task.dueDate ? (isToday(task.dueDate) ? 'Hoje' : task.dueDate) : null;
+  const dueLabel = task.dueDate ? (isToday(task.dueDate) ? 'Hoje' : formatDateBR(task.dueDate)) : null;
   const subtaskProgress = task.subtasks.length
     ? Math.round((task.subtasks.filter((s) => s.completed).length / task.subtasks.length) * 100)
     : null;

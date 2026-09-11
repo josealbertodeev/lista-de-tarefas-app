@@ -1,9 +1,7 @@
-import { Timer, Play, Pause, RotateCcw, Flame, Coffee, Volume2, VolumeX } from 'lucide-react';
+import { Timer, Play, Pause, RotateCcw, Flame, Coffee } from 'lucide-react';
 import { usePomodoroStore } from '../../stores/usePomodoroStore';
 import { useProfileStore } from '../../stores/useProfileStore';
 import { useTaskStore } from '../../stores/useTaskStore';
-import { startWhiteNoise, stopWhiteNoise } from '../../lib/audio';
-import { useEffect } from 'react';
 import { cn } from '../../lib/utils';
 
 const PHASE_LABEL: Record<string, string> = {
@@ -17,14 +15,7 @@ export function PomodoroCard() {
     usePomodoroStore();
   const { start, pause, reset, skip } = usePomodoroStore();
   const profile = useProfileStore((s) => s.profile);
-  const updateProfile = useProfileStore((s) => s.updateProfile);
   const activeTask = useTaskStore((s) => s.tasks.find((t) => t.id === activeTaskId));
-
-  useEffect(() => {
-    if (profile.whiteNoiseEnabled && isRunning && phase === 'focus') startWhiteNoise();
-    else stopWhiteNoise();
-    return () => stopWhiteNoise();
-  }, [profile.whiteNoiseEnabled, isRunning, phase]);
 
   const minutes = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
   const seconds = String(secondsLeft % 60).padStart(2, '0');
@@ -40,13 +31,6 @@ export function PomodoroCard() {
           <h2 className="font-semibold">Técnica Pomodoro</h2>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => updateProfile({ whiteNoiseEnabled: !profile.whiteNoiseEnabled })}
-            title="Ruído branco"
-            className={cn('p-1.5 rounded-lg border', profile.whiteNoiseEnabled ? 'text-primary border-primary/40 bg-primary/10' : 'text-text-muted border-border')}
-          >
-            {profile.whiteNoiseEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
-          </button>
           <span className="px-2 py-0.5 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs font-semibold uppercase">
             {PHASE_LABEL[phase]}
           </span>

@@ -26,6 +26,12 @@ export function formatDatePt(iso?: string): string {
   return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
 }
 
+export function formatDateBR(iso?: string): string {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
 export function isToday(iso?: string): boolean {
   return !!iso && iso === todayISO();
 }

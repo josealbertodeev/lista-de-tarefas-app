@@ -1,3 +1,4 @@
+import { useProfileStore } from '../stores/useProfileStore';
 let ctx: AudioContext | null = null;
 
 function getCtx(): AudioContext {
@@ -34,34 +35,9 @@ export function playTaskCompleteSound() {
   setTimeout(() => playBeep(1318, 0.14), 100);
 }
 
-let whiteNoiseNode: AudioBufferSourceNode | null = null;
-
-export function startWhiteNoise() {
-  if (whiteNoiseNode) return;
-  const audioCtx = getCtx();
-  const bufferSize = 2 * audioCtx.sampleRate;
-  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-  const output = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
-
-  const source = audioCtx.createBufferSource();
-  source.buffer = buffer;
-  source.loop = true;
-  const gain = audioCtx.createGain();
-  gain.gain.value = 0.04;
-  source.connect(gain);
-  gain.connect(audioCtx.destination);
-  source.start();
-  whiteNoiseNode = source;
-}
-
-export function stopWhiteNoise() {
-  whiteNoiseNode?.stop();
-  whiteNoiseNode = null;
-}
-
 export function notify(title: string, body: string) {
   if (typeof Notification === 'undefined') return;
+  if (!useProfileStore.getState().profile.notificationsEnabled) return;
   if (Notification.permission === 'granted') {
     new Notification(title, { body, icon: '/vite.svg' });
   } else if (Notification.permission !== 'denied') {

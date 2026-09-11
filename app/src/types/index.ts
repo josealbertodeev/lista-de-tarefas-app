@@ -76,7 +76,6 @@ export interface UserProfile {
   lastActiveDate?: string;
   theme: ThemeMode;
   soundEnabled: boolean;
-  whiteNoiseEnabled: boolean;
   notificationsEnabled: boolean;
 }
 
