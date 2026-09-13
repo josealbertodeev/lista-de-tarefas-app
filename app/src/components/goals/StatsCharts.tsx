@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { addDays, format, startOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useTaskStore } from '../../stores/useTaskStore';
+import { isoFromTimestamp } from '../../lib/utils';
 import { CATEGORIES, CATEGORY_COLORS } from '../../types';
 
 export function WeeklyProductivityChart() {
@@ -13,7 +14,7 @@ export function WeeklyProductivityChart() {
     return Array.from({ length: 7 }, (_, i) => {
       const day = addDays(start, i);
       const iso = format(day, 'yyyy-MM-dd');
-      const count = tasks.filter((t) => t.completedAt?.slice(0, 10) === iso).length;
+      const count = tasks.filter((t) => t.completedAt && isoFromTimestamp(t.completedAt) === iso).length;
       return { day: format(day, 'EEE', { locale: ptBR }), tarefas: count };
     });
   }, [tasks]);

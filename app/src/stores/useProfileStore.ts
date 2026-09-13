@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { UserProfile, ThemeMode, Achievement } from '../types';
-import { todayISO, xpForLevel, clamp } from '../lib/utils';
+import { todayISO, addDaysISO, xpForLevel, clamp } from '../lib/utils';
 
 interface XpGainResult {
   leveledUp: boolean;
@@ -94,7 +94,8 @@ export const useProfileStore = create<ProfileStoreState>()(
         const today = todayISO();
         set((s) => {
           if (s.profile.lastActiveDate === today) return s;
-          const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+          // Subtrair 86400000ms quebra no horário de verão; addDaysISO trabalha em datas locais.
+          const yesterday = addDaysISO(today, -1);
           const streakDays = s.profile.lastActiveDate === yesterday ? s.profile.streakDays + 1 : 1;
           return { profile: { ...s.profile, lastActiveDate: today, streakDays } };
         });
@@ -105,6 +106,28 @@ export const useProfileStore = create<ProfileStoreState>()(
     }),
     {
       name: 'minhas-tarefas-profile',
+      version: 1,
+      // O merge padrão do zustand é raso: o objeto profile salvo substituiria
+      // defaultProfile inteiro, e todo campo novo do perfil chegaria como undefined
+      // para quem já usa o app. Aqui ele é fundido campo a campo.
+      merge: (persisted, current) => {
+        const saved = (persisted ?? {}) as Partial<ProfileStoreState>;
+        return {
+          ...current,
+          ...saved,
+          profile: { ...current.profile, ...(saved.profile ?? {}) },
+        };
+      },
+      migrate: (persisted) => {
+        const state = (persisted ?? {}) as Partial<ProfileStoreState>;
+        const profile = state.profile;
+        // Resíduo do bug de fuso: lastActiveDate pode ter sido gravado com a data de
+        // amanhã, o que zeraria a sequência do usuário sem motivo.
+        if (profile?.lastActiveDate && profile.lastActiveDate > todayISO()) {
+          return { ...state, profile: { ...profile, lastActiveDate: todayISO() } } as ProfileStoreState;
+        }
+        return state as ProfileStoreState;
+      },
       onRehydrateStorage: () => (state) => {
         if (state) applyThemeClass(state.profile.theme);
       },

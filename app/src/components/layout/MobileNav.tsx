@@ -1,4 +1,4 @@
-import { ListChecks, Kanban, CalendarDays, Target, User, Plus } from 'lucide-react';
+import { ListChecks, Kanban, CalendarDays, ChartGantt, Target, User, Plus } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { AppView } from '../../App';
 
@@ -6,6 +6,7 @@ const TABS: { key: AppView; label: string; icon: typeof ListChecks }[] = [
   { key: 'dashboard', label: 'Tarefas', icon: ListChecks },
   { key: 'kanban', label: 'Quadro', icon: Kanban },
   { key: 'calendar', label: 'Calendário', icon: CalendarDays },
+  { key: 'gantt', label: 'Linha', icon: ChartGantt },
   { key: 'goals', label: 'Metas', icon: Target },
   { key: 'settings', label: 'Perfil', icon: User },
 ];

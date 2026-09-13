@@ -3,15 +3,13 @@ import { addDays, differenceInCalendarDays, format, startOfDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale';
 import { AlertTriangle } from 'lucide-react';
 import { useTaskStore } from '../../stores/useTaskStore';
-import { CATEGORY_COLORS } from '../../types';
-import type { Category } from '../../types';
-import { cn } from '../../lib/utils';
+import { CATEGORIES, CATEGORY_COLORS, CATEGORY_ICONS } from '../../types';
+import { cn, isoFromTimestamp } from '../../lib/utils';
+import { useToday } from '../../lib/useToday';
 
-const GROUPS: { category: Category; label: string }[] = [
-  { category: 'Trabalho', label: 'Engenharia & Backend' },
-  { category: 'Estudo', label: 'Gestão & Estratégia' },
-  { category: 'Saúde', label: 'Desenvolvimento & Saúde' },
-];
+// Todas as categorias entram na linha do tempo. Antes a lista era fixa em três,
+// então tarefas em Pessoal, Compras e Outros simplesmente não apareciam aqui.
+const GROUPS = CATEGORIES.map((category) => ({ category, label: `${CATEGORY_ICONS[category]} ${category}` }));
 
 const DAY_WIDTH = 44;
 const WINDOW_DAYS = 21;
@@ -20,9 +18,12 @@ export function GanttChart() {
   const tasks = useTaskStore((s) => s.tasks);
   const goals = useTaskStore((s) => s.goals);
 
-  const rangeStart = useMemo(() => addDays(startOfDay(new Date()), -3), []);
+  const today = useToday();
+  // Recentraliza sozinho quando o dia vira: antes a janela ficava congelada na montagem.
+  const todayDate = useMemo(() => startOfDay(new Date(today + 'T00:00:00')), [today]);
+  const rangeStart = useMemo(() => addDays(todayDate, -3), [todayDate]);
   const days = useMemo(() => Array.from({ length: WINDOW_DAYS }, (_, i) => addDays(rangeStart, i)), [rangeStart]);
-  const todayOffset = differenceInCalendarDays(startOfDay(new Date()), rangeStart);
+  const todayOffset = differenceInCalendarDays(todayDate, rangeStart);
 
   const dayOf = (iso: string) => differenceInCalendarDays(new Date(iso + 'T00:00:00'), rangeStart);
 
@@ -66,7 +67,7 @@ export function GanttChart() {
                   <div className="flex-1" style={{ width: days.length * DAY_WIDTH }} />
                 </div>
                 {groupTasks.map((task) => {
-                  const startDay = dayOf(task.createdAt.slice(0, 10));
+                  const startDay = dayOf(isoFromTimestamp(task.createdAt));
                   const endDay = dayOf(task.dueDate!);
                   const clampedStart = Math.max(0, startDay);
                   const clampedEnd = Math.min(days.length - 1, Math.max(endDay, clampedStart));

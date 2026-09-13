@@ -6,7 +6,8 @@ import { usePomodoroStore } from '../../stores/usePomodoroStore';
 import { WeeklyProductivityChart, CategoryBreakdownChart } from './StatsCharts';
 import { GoalCard } from './GoalCard';
 import { NewGoalModal } from '../modals/NewGoalModal';
-import { xpForLevel, todayISO } from '../../lib/utils';
+import { xpForLevel, isoFromTimestamp } from '../../lib/utils';
+import { useToday } from '../../lib/useToday';
 
 export function GoalsStats() {
   const tasks = useTaskStore((s) => s.tasks);
@@ -14,12 +15,15 @@ export function GoalsStats() {
   const profile = useProfileStore((s) => s.profile);
   const focusMinutesToday = usePomodoroStore((s) => s.focusMinutesToday);
   const [showGoalModal, setShowGoalModal] = useState(false);
+  const today = useToday();
 
   const completedTasks = tasks.filter((t) => t.status === 'completed');
   const efficiency = tasks.length ? Math.round((completedTasks.length / tasks.length) * 100) : 0;
   const totalFocusHours = (tasks.reduce((sum, t) => sum + t.pomodorosCompleted, 0) * profile.focusMinutes) / 60;
 
-  const todayDone = tasks.filter((t) => t.status === 'completed' && t.completedAt?.slice(0, 10) === todayISO()).length;
+  const todayDone = tasks.filter(
+    (t) => t.status === 'completed' && t.completedAt && isoFromTimestamp(t.completedAt) === today
+  ).length;
   const dailyChallengeTarget = 3;
   const need = xpForLevel(profile.level);
 
@@ -110,8 +114,8 @@ export function GoalsStats() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {sortedGoals.map((goal) => (
-            <GoalCard key={goal.id} goal={goal} />
+          {sortedGoals.map((goal, i) => (
+            <GoalCard key={goal.id} goal={goal} index={i} />
           ))}
         </div>
       )}

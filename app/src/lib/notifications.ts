@@ -1,5 +1,6 @@
 import type { Appointment, Task, Priority } from '../types';
-import { todayISO, addDaysISO, formatDatePt } from './utils';
+import { todayISO, nowHM, addDaysISO, formatDatePt } from './utils';
+import { occurrencesOn } from './recurrence';
 
 export type NotificationKind = 'overdue' | 'today' | 'soon' | 'appointment' | 'goal';
 
@@ -34,9 +35,12 @@ function daysBetween(from: string, to: string): number {
 export function buildNotifications(
   tasks: Task[],
   appointments: Appointment[],
-  goals: { id: string; title: string; deadline: string; progress: number }[] = []
+  goals: { id: string; title: string; deadline: string; progress: number }[] = [],
+  /** Data de referência (YYYY-MM-DD local). Injetada para manter a função pura. */
+  today: string = todayISO(),
+  /** Hora atual (HH:mm). Também injetada, para a função continuar testável. */
+  now: string = nowHM()
 ): AppNotification[] {
-  const today = todayISO();
   const horizon = addDaysISO(today, 3);
   const items: AppNotification[] = [];
 
@@ -56,11 +60,14 @@ export function buildNotifications(
         target: 'dashboard',
       });
     } else if (task.dueDate === today) {
+      // Com horário definido e já vencido, "Vence hoje" seria enganoso às 18h
+      // para algo marcado para as 14h.
+      const alreadyDue = !!task.dueTime && task.dueTime < now;
       items.push({
-        id: `today:${task.id}`,
-        kind: 'today',
+        id: alreadyDue ? `overdue:${task.id}` : `today:${task.id}`,
+        kind: alreadyDue ? 'overdue' : 'today',
         title: task.title,
-        detail: task.dueTime ? `Vence hoje às ${task.dueTime}` : 'Vence hoje',
+        detail: alreadyDue ? `Venceu hoje às ${task.dueTime}` : task.dueTime ? `Vence hoje às ${task.dueTime}` : 'Vence hoje',
         date: task.dueDate,
         time: task.dueTime,
         priority: task.priority,
@@ -81,16 +88,18 @@ export function buildNotifications(
     }
   }
 
-  for (const appt of appointments) {
-    if (appt.date !== today) continue;
+  // occurrencesOn expande as séries: um compromisso semanal avisa toda semana,
+  // e não só no dia em que foi criado.
+  for (const occurrence of occurrencesOn(appointments, today)) {
+    const passed = occurrence.time < now;
     items.push({
-      id: `appt:${appt.id}`,
+      id: `appt:${occurrence.occurrenceId}`,
       kind: 'appointment',
-      title: appt.title,
-      detail: `Compromisso hoje às ${appt.time}${appt.location ? ` · ${appt.location}` : ''}`,
-      date: appt.date,
-      time: appt.time,
-      priority: appt.priority,
+      title: occurrence.title,
+      detail: `${passed ? 'Começou hoje às' : 'Compromisso hoje às'} ${occurrence.time}${occurrence.location ? ` · ${occurrence.location}` : ''}`,
+      date: occurrence.date,
+      time: occurrence.time,
+      priority: occurrence.priority,
       target: 'calendar',
     });
   }

@@ -1,8 +1,14 @@
 import { useMemo, useState } from 'react';
-import { Pencil, Trash2, Clock, MapPin } from 'lucide-react';
+import { Pencil, Trash2, Clock, MapPin, Eye, Repeat } from 'lucide-react';
 import { useTaskStore } from '../../stores/useTaskStore';
+import type { Appointment } from '../../types';
 import { CategoryBadge, PriorityBadge } from '../common/Badge';
-import { ConfirmDialog } from '../modals/Modal';
+import { Modal, ConfirmDialog } from '../modals/Modal';
+import { NewAppointmentModal } from '../modals/NewAppointmentModal';
+import { AppointmentDetailsModal } from '../modals/AppointmentDetailsModal';
+import { occurrencesOn } from '../../lib/recurrence';
+import type { Occurrence } from '../../lib/recurrence';
+import { REPEAT_LABELS } from '../../lib/recurrence';
 import { cn } from '../../lib/utils';
 
 export function DayPanel({ date }: { date: string }) {
@@ -10,10 +16,15 @@ export function DayPanel({ date }: { date: string }) {
   const allAppointments = useTaskStore((s) => s.appointments);
   const deleteAppointment = useTaskStore((s) => s.deleteAppointment);
   const toggleTaskCompletion = useTaskStore((s) => s.toggleTaskCompletion);
-  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const skipOccurrence = useTaskStore((s) => s.skipOccurrence);
+  const [removing, setRemoving] = useState<Occurrence | null>(null);
+  const [editing, setEditing] = useState<Appointment | null>(null);
+  const [viewing, setViewing] = useState<Occurrence | null>(null);
 
   const tasks = useMemo(() => allTasks.filter((t) => t.dueDate === date), [allTasks, date]);
-  const appointments = useMemo(() => allAppointments.filter((a) => a.date === date), [allAppointments, date]);
+  // Séries recorrentes só aparecem em todos os dias porque as ocorrências são
+  // geradas aqui; filtrar por a.date === date mostraria apenas a primeira.
+  const appointments = useMemo(() => occurrencesOn(allAppointments, date), [allAppointments, date]);
 
   const dateLabel = useMemo(() => {
     const [y, m, d] = date.split('-').map(Number);
@@ -35,9 +46,19 @@ export function DayPanel({ date }: { date: string }) {
           {items.map((item) =>
             item.type === 'appointment' ? (
               <div key={item.data.id} className="p-3 rounded-xl bg-surface-hover border border-border">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-text">{item.data.title}</span>
-                  <span className="text-xs font-mono text-primary">{item.data.time}</span>
+                <div className="flex items-center justify-between mb-1 gap-2">
+                  <span className="text-sm font-medium text-text flex items-center gap-1.5 min-w-0">
+                    <span className="truncate">{item.data.title}</span>
+                    {item.data.isRecurring && (
+                      <span
+                        title={REPEAT_LABELS[item.data.repeat]}
+                        className="shrink-0 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-medium bg-primary/10 text-primary border border-primary/30"
+                      >
+                        <Repeat size={9} /> {REPEAT_LABELS[item.data.repeat]}
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-xs font-mono text-primary shrink-0">{item.data.time}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -49,10 +70,28 @@ export function DayPanel({ date }: { date: string }) {
                     )}
                   </div>
                   <div className="flex items-center gap-1">
-                    <button className="p-1 rounded text-text-muted hover:text-text">
+                    <button
+                      onClick={() => setViewing(item.data)}
+                      title="Visualizar compromisso"
+                      aria-label="Visualizar compromisso"
+                      className="p-1 rounded text-text-muted hover:text-primary hover:bg-surface transition-colors"
+                    >
+                      <Eye size={13} />
+                    </button>
+                    <button
+                      onClick={() => setEditing(item.data)}
+                      title="Editar compromisso"
+                      aria-label="Editar compromisso"
+                      className="p-1 rounded text-text-muted hover:text-text hover:bg-surface transition-colors"
+                    >
                       <Pencil size={13} />
                     </button>
-                    <button onClick={() => setConfirmId(item.data.id)} className="p-1 rounded text-text-muted hover:text-red-400">
+                    <button
+                      onClick={() => setRemoving(item.data)}
+                      title="Excluir compromisso"
+                      aria-label="Excluir compromisso"
+                      className="p-1 rounded text-text-muted hover:text-red-400 hover:bg-surface transition-colors"
+                    >
                       <Trash2 size={13} />
                     </button>
                   </div>
@@ -89,13 +128,68 @@ export function DayPanel({ date }: { date: string }) {
         </div>
       )}
 
-      <ConfirmDialog
-        open={!!confirmId}
-        onClose={() => setConfirmId(null)}
-        onConfirm={() => confirmId && deleteAppointment(confirmId)}
-        title="Excluir Compromisso?"
-        message="Tem certeza que deseja excluir este compromisso?"
+      <AppointmentDetailsModal
+        open={!!viewing}
+        onClose={() => setViewing(null)}
+        appointment={viewing}
+        onEdit={() => {
+          setEditing(viewing);
+          setViewing(null);
+        }}
       />
+
+      <NewAppointmentModal open={!!editing} onClose={() => setEditing(null)} appointment={editing} />
+
+      {removing?.isRecurring ? (
+        <Modal
+          open
+          onClose={() => setRemoving(null)}
+          title="Excluir Compromisso Recorrente"
+          icon={<Repeat className="text-primary" size={18} />}
+          widthClass="max-w-md"
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-text-muted">
+              <strong className="text-text">{removing.title}</strong> se repete{' '}
+              {REPEAT_LABELS[removing.repeat].toLowerCase()}. O que você quer excluir?
+            </p>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  skipOccurrence(removing.id, removing.date);
+                  setRemoving(null);
+                }}
+                className="w-full py-2.5 px-4 rounded-xl border border-border text-text hover:bg-surface-hover transition-colors font-medium text-sm"
+              >
+                Apenas este dia
+              </button>
+              <button
+                onClick={() => {
+                  deleteAppointment(removing.id);
+                  setRemoving(null);
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-red-500 hover:bg-red-600 text-white transition-colors font-medium text-sm"
+              >
+                Toda a série
+              </button>
+              <button
+                onClick={() => setRemoving(null)}
+                className="w-full py-2.5 px-4 rounded-xl text-text-muted hover:text-text transition-colors font-medium text-sm"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </Modal>
+      ) : (
+        <ConfirmDialog
+          open={!!removing}
+          onClose={() => setRemoving(null)}
+          onConfirm={() => removing && deleteAppointment(removing.id)}
+          title="Excluir Compromisso?"
+          message="Tem certeza que deseja excluir este compromisso?"
+        />
+      )}
     </div>
   );
 }

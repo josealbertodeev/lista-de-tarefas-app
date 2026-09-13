@@ -1,11 +1,18 @@
 import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { User, Timer, Bell, Download, Upload, Sun, Moon, Trash2 } from 'lucide-react';
+import { User, Timer, Bell, BellRing, Download, Upload, Sun, Moon, Trash2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useProfileStore, titleForLevel } from '../../stores/useProfileStore';
 import { useTaskStore } from '../../stores/useTaskStore';
 import { usePomodoroStore } from '../../stores/usePomodoroStore';
-import { cn } from '../../lib/utils';
-import { ConfirmDialog } from '../modals/Modal';
+import { useNotificationStore } from '../../stores/useNotificationStore';
+import { cn, formatDateBR } from '../../lib/utils';
+import { ensureNotificationPermission, notificationPermission, notify, playTaskCompleteSound } from '../../lib/audio';
+import { mergeById, parseBackup, serializeBackup } from '../../lib/backup';
+import type { BackupPayload, BackupSummary } from '../../lib/backup';
+import { Modal, ConfirmDialog } from '../modals/Modal';
+
+/** Cópia de segurança automática gravada logo antes de uma importação. */
+const PRE_IMPORT_KEY = 'minhas-tarefas-backup-pre-import';
 
 const FOCUS_OPTIONS = [20, 25, 30, 45, 50];
 const SHORT_BREAK_OPTIONS = [5, 10, 15];
@@ -16,10 +23,46 @@ export function SettingsProfile() {
   const { tasks, appointments, goals } = useTaskStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [permission, setPermission] = useState(notificationPermission());
+  const [pending, setPending] = useState<{ data: BackupPayload; summary: BackupSummary } | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importDone, setImportDone] = useState<string | null>(null);
+
+  // A permissão é pedida aqui, a partir do clique do usuário — nunca de dentro de um
+  // timer, que era o motivo do pedido aparecer em momentos aleatórios.
+  const toggleBrowserNotifications = async () => {
+    if (profile.notificationsEnabled) {
+      updateProfile({ notificationsEnabled: false });
+      return;
+    }
+    const result = await ensureNotificationPermission();
+    setPermission(result);
+    updateProfile({ notificationsEnabled: result === 'granted' });
+  };
+
+  const sendTestNotification = () => {
+    const sent = notify('Notificação de teste 🔔', 'Se você está vendo isto, os avisos estão funcionando.', 'teste');
+    if (!sent) setPermission(notificationPermission());
+  };
 
   const exportData = () => {
-    const payload = { tasks, appointments, goals, profile, exportedAt: new Date().toISOString() };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const pomodoro = usePomodoroStore.getState();
+    const text = serializeBackup({
+      tasks,
+      appointments,
+      goals,
+      profile,
+      // Conquistas e contadores de foco ficavam de fora: restaurar um backup
+      // zerava esse progresso silenciosamente.
+      achievements: useProfileStore.getState().achievements,
+      pomodoro: {
+        sessionsCompletedToday: pomodoro.sessionsCompletedToday,
+        focusMinutesToday: pomodoro.focusMinutesToday,
+        breakMinutesToday: pomodoro.breakMinutesToday,
+        lastTickDate: pomodoro.lastTickDate,
+      },
+    });
+    const blob = new Blob([text], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -28,19 +71,68 @@ export function SettingsProfile() {
     URL.revokeObjectURL(url);
   };
 
+  // O arquivo é validado e resumido primeiro; nada é gravado antes da confirmação.
   const importData = (file: File) => {
+    setImportError(null);
+    setImportDone(null);
     const reader = new FileReader();
+    reader.onerror = () => setImportError('Não foi possível ler o arquivo.');
     reader.onload = () => {
-      try {
-        const data = JSON.parse(reader.result as string);
-        if (data.tasks) useTaskStore.setState({ tasks: data.tasks, appointments: data.appointments ?? [], goals: data.goals ?? [] });
-        if (data.profile) useProfileStore.setState({ profile: data.profile });
-        alert('Dados importados com sucesso!');
-      } catch {
-        alert('Arquivo inválido.');
+      const result = parseBackup(String(reader.result ?? ''));
+      if (!result.ok) {
+        setImportError(result.error);
+        return;
       }
+      setPending({ data: result.data, summary: result.summary });
     };
     reader.readAsText(file);
+  };
+
+  const applyImport = (mode: 'replace' | 'merge') => {
+    if (!pending) return;
+    const { data } = pending;
+
+    // Rede de segurança: o estado atual fica guardado caso a importação decepcione.
+    try {
+      const current = useTaskStore.getState();
+      localStorage.setItem(
+        PRE_IMPORT_KEY,
+        serializeBackup({
+          tasks: current.tasks,
+          appointments: current.appointments,
+          goals: current.goals,
+          profile: useProfileStore.getState().profile,
+          achievements: useProfileStore.getState().achievements,
+        })
+      );
+    } catch {
+      // Sem espaço em disco para o backup preventivo: seguimos, o usuário pediu a importação.
+    }
+
+    useTaskStore.setState((s) =>
+      mode === 'replace'
+        ? { tasks: data.tasks, appointments: data.appointments, goals: data.goals }
+        : {
+            tasks: mergeById(s.tasks, data.tasks),
+            appointments: mergeById(s.appointments, data.appointments),
+            goals: mergeById(s.goals, data.goals),
+          }
+    );
+
+    if (data.profile) {
+      useProfileStore.setState((s) => ({ profile: { ...s.profile, ...data.profile } }));
+    }
+    if (data.achievements.length) {
+      useProfileStore.setState((s) => ({ achievements: mergeById(s.achievements, data.achievements) }));
+    }
+
+    const total = data.tasks.length + data.appointments.length + data.goals.length;
+    setImportDone(
+      mode === 'replace'
+        ? `${total} registros importados, substituindo os anteriores.`
+        : `${total} registros analisados e mesclados aos existentes.`
+    );
+    setPending(null);
   };
 
   const resetAllData = () => {
@@ -57,8 +149,11 @@ export function SettingsProfile() {
       focusMinutesToday: 0,
       breakMinutesToday: 0,
       activeTaskId: undefined,
+      endsAt: undefined,
       secondsLeft: useProfileStore.getState().profile.focusMinutes * 60,
     });
+    // As marcações de notificação sobreviviam a um "apagar tudo".
+    useNotificationStore.setState({ readIds: [], pushedIds: [] });
   };
 
   return (
@@ -142,8 +237,39 @@ export function SettingsProfile() {
         </h2>
         <div className="space-y-3">
           <ToggleRow label="Modo escuro" checked={profile.theme === 'dark'} onChange={toggleTheme} icon={profile.theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />} />
-          <ToggleRow label="Sons de notificação" checked={profile.soundEnabled} onChange={() => updateProfile({ soundEnabled: !profile.soundEnabled })} />
-          <ToggleRow label="Notificações do navegador" checked={profile.notificationsEnabled} onChange={() => updateProfile({ notificationsEnabled: !profile.notificationsEnabled })} />
+          <ToggleRow
+            label="Sons de notificação"
+            checked={profile.soundEnabled}
+            onChange={() => {
+              const enabled = !profile.soundEnabled;
+              updateProfile({ soundEnabled: enabled });
+              // Toca uma amostra ao ligar, para o interruptor ter resposta audível.
+              if (enabled) setTimeout(playTaskCompleteSound, 0);
+            }}
+          />
+          <ToggleRow label="Notificações do navegador" checked={profile.notificationsEnabled} onChange={toggleBrowserNotifications} />
+
+          {permission === 'denied' && (
+            <p className="text-xs text-red-400 pl-1">
+              O navegador bloqueou as notificações para este site. Libere nas permissões do site para voltar a recebê-las.
+            </p>
+          )}
+          {permission === 'unsupported' && (
+            <p className="text-xs text-text-muted pl-1">Este navegador não oferece notificações do sistema.</p>
+          )}
+
+          {profile.notificationsEnabled && permission === 'granted' && (
+            <button
+              onClick={sendTestNotification}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-hover border border-border text-text-muted hover:text-primary hover:border-primary/40 text-xs font-medium transition-colors"
+            >
+              <BellRing size={13} /> Testar notificação
+            </button>
+          )}
+
+          <p className="text-xs text-text-muted pl-1">
+            Os avisos chegam enquanto o app estiver aberto em alguma aba.
+          </p>
         </div>
       </div>
 
@@ -167,7 +293,74 @@ export function SettingsProfile() {
             <Trash2 size={15} /> Apagar Todos os Dados
           </button>
         </div>
+
+        {importError && (
+          <p role="alert" className="mt-3 flex items-start gap-1.5 text-xs text-red-400 error-shake">
+            <AlertCircle size={13} className="mt-0.5 shrink-0" />
+            <span>{importError} Seus dados atuais não foram alterados.</span>
+          </p>
+        )}
+        {importDone && (
+          <p className="mt-3 flex items-start gap-1.5 text-xs text-primary">
+            <CheckCircle2 size={13} className="mt-0.5 shrink-0" />
+            <span>{importDone}</span>
+          </p>
+        )}
       </div>
+
+      <Modal
+        open={!!pending}
+        onClose={() => setPending(null)}
+        title="Revisar Importação"
+        icon={<Upload className="text-primary" size={18} />}
+      >
+        {pending && (
+          <div className="space-y-4">
+            <p className="text-sm text-text-muted">
+              Confira o que o arquivo contém antes de gravar.
+              {pending.summary.exportedAt && ` Exportado em ${formatDateBR(pending.summary.exportedAt.slice(0, 10))}.`}
+            </p>
+
+            <div className="space-y-1.5">
+              <SummaryRow label="Tarefas" value={pending.summary.tasks} />
+              <SummaryRow label="Compromissos" value={pending.summary.appointments} />
+              <SummaryRow label="Metas" value={pending.summary.goals} />
+              {pending.summary.achievements.kept > 0 && <SummaryRow label="Conquistas" value={pending.summary.achievements} />}
+            </div>
+
+            {pending.summary.hasProfile && (
+              <p className="text-xs text-text-muted">As configurações de perfil do arquivo também serão aplicadas.</p>
+            )}
+
+            <div className="p-3 rounded-xl bg-surface-hover border border-border text-xs text-text-muted">
+              <strong className="text-text">Substituir</strong> apaga o que existe hoje e usa só o arquivo.{' '}
+              <strong className="text-text">Mesclar</strong> mantém tudo e acrescenta apenas o que ainda não existe — é a
+              opção certa para juntar dados de outro dispositivo.
+            </div>
+
+            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-1">
+              <button
+                onClick={() => setPending(null)}
+                className="w-full sm:w-auto shrink-0 px-5 py-2.5 rounded-xl border border-border text-text hover:bg-surface-hover transition-colors font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => applyImport('merge')}
+                className="w-full sm:flex-1 min-w-0 py-2.5 px-4 rounded-xl border border-primary/40 text-primary font-semibold whitespace-nowrap hover:bg-primary/10 transition-colors"
+              >
+                Mesclar
+              </button>
+              <button
+                onClick={() => applyImport('replace')}
+                className="w-full sm:flex-1 min-w-0 py-2.5 px-4 rounded-xl bg-primary hover:bg-primary-dim text-white font-semibold whitespace-nowrap transition-colors"
+              >
+                Substituir tudo
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       <ConfirmDialog
         open={confirmReset}
@@ -198,6 +391,18 @@ function OptionGroup({ label, options, value, onChange }: { label: string; optio
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: { kept: number; skipped: number } }) {
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <span className="text-text-muted">{label}</span>
+      <span className="text-text font-medium">
+        {value.kept}
+        {value.skipped > 0 && <span className="text-red-400 font-normal"> · {value.skipped} ignorados</span>}
+      </span>
     </div>
   );
 }
