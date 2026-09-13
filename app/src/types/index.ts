@@ -24,6 +24,8 @@ export interface Task {
   subtasks: Subtask[];
   isCriticalPath?: boolean;
   isFavorite?: boolean;
+  /** XP já concedido por esta tarefa. Impede ganhar de novo ao remarcar como concluída. */
+  xpAwarded?: boolean;
   createdAt: string;
   completedAt?: string;
 }
@@ -43,6 +45,12 @@ export interface Appointment {
   repeat: Repeat;
   repeatEndDate?: string;
   participants: string[];
+  /**
+   * Datas (YYYY-MM-DD) puladas na série — "excluir apenas este compromisso".
+   * As ocorrências são geradas na leitura, então cancelar uma delas é registrar
+   * a exceção aqui, e não apagar um registro.
+   */
+  exceptions?: string[];
 }
 
 export interface Goal {
