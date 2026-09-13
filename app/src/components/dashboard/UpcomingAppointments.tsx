@@ -1,20 +1,20 @@
 import { useMemo, useState } from 'react';
 import { CalendarClock, Plus, MapPin, Video } from 'lucide-react';
 import { useTaskStore } from '../../stores/useTaskStore';
-import { todayISO, formatDatePt } from '../../lib/utils';
+import { formatDatePt, addDaysISO } from '../../lib/utils';
+import { useToday } from '../../lib/useToday';
+import { occurrencesBetween } from '../../lib/recurrence';
 import { NewAppointmentModal } from '../modals/NewAppointmentModal';
 
 export function UpcomingAppointments() {
   const appointments = useTaskStore((s) => s.appointments);
   const [showModal, setShowModal] = useState(false);
-  const today = todayISO();
+  const today = useToday();
 
+  // Janela de 90 dias: suficiente para mostrar os próximos três mesmo quando só
+  // existem compromissos recorrentes distantes, sem gerar ocorrências à toa.
   const upcoming = useMemo(
-    () =>
-      [...appointments]
-        .filter((a) => a.date >= today)
-        .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
-        .slice(0, 3),
+    () => occurrencesBetween(appointments, today, addDaysISO(today, 90)).slice(0, 3),
     [appointments, today]
   );
 
@@ -41,7 +41,7 @@ export function UpcomingAppointments() {
       ) : (
         <div className="space-y-3">
           {upcoming.map((a) => (
-            <div key={a.id} className="flex items-center gap-3 p-3 rounded-xl bg-surface-hover border border-border">
+            <div key={a.occurrenceId} className="flex items-center gap-3 p-3 rounded-xl bg-surface-hover border border-border">
               <div className="flex flex-col items-center justify-center w-12 h-12 rounded-lg bg-surface border border-border shrink-0">
                 <span className="text-[9px] uppercase text-text-muted">{formatDatePt(a.date).split(' ')[1]}</span>
                 <span className="text-sm font-bold text-text">{formatDatePt(a.date).split(' ')[0]}</span>

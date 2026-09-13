@@ -7,6 +7,7 @@ import { buildNotifications } from '../../lib/notifications';
 import type { AppNotification, NotificationKind } from '../../lib/notifications';
 import { notify } from '../../lib/audio';
 import { cn } from '../../lib/utils';
+import { useToday } from '../../lib/useToday';
 import type { AppView } from '../../App';
 
 const KIND_ICON: Record<NotificationKind, typeof Bell> = {
@@ -34,10 +35,13 @@ export function NotificationBell({ onNavigate }: { onNavigate: (v: AppView) => v
 
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const today = useToday();
 
+  // O feed é classificado por data, então precisa ser refeito quando o dia vira
+  // com a aba aberta — daí "today" ser passado explicitamente.
   const notifications = useMemo(
-    () => buildNotifications(tasks, appointments, goals),
-    [tasks, appointments, goals]
+    () => buildNotifications(tasks, appointments, goals, today),
+    [tasks, appointments, goals, today]
   );
 
   const readSet = useMemo(() => new Set(readIds), [readIds]);
@@ -57,7 +61,8 @@ export function NotificationBell({ onNavigate }: { onNavigate: (v: AppView) => v
     const [first] = fresh;
     notify(
       fresh.length === 1 ? 'Tarefa atrasada' : `${fresh.length} tarefas atrasadas`,
-      fresh.length === 1 ? `${first.title} — ${first.detail}` : `Começando por: ${first.title}`
+      fresh.length === 1 ? `${first.title} — ${first.detail}` : `Começando por: ${first.title}`,
+      'tarefas-atrasadas'
     );
     markPushed(fresh.map((n) => n.id));
   }, [notifications, notificationsEnabled, pushedIds, markPushed]);

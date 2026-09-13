@@ -6,6 +6,7 @@ import { MonthGrid } from './MonthGrid';
 import { WeekGrid } from './WeekGrid';
 import { DayPanel } from './DayPanel';
 import { cn, todayISO } from '../../lib/utils';
+import { useToday } from '../../lib/useToday';
 import { NewAppointmentModal } from '../modals/NewAppointmentModal';
 
 export function CalendarView() {
@@ -13,6 +14,7 @@ export function CalendarView() {
   const [cursor, setCursor] = useState(new Date());
   const [selected, setSelected] = useState(todayISO());
   const [showModal, setShowModal] = useState(false);
+  const today = useToday();
 
   const goPrev = () => setCursor((c) => (mode === 'month' ? addMonths(c, -1) : addWeeks(c, -1)));
   const goNext = () => setCursor((c) => (mode === 'month' ? addMonths(c, 1) : addWeeks(c, 1)));
@@ -40,7 +42,7 @@ export function CalendarView() {
           <button onClick={goNext} className="p-2 rounded-lg border border-border text-text-muted hover:text-text hover:bg-surface-hover">
             <ChevronRight size={16} />
           </button>
-          <button onClick={() => { setCursor(new Date()); setSelected(todayISO()); }} className="px-3 py-1.5 rounded-lg text-xs font-medium border border-border text-text-muted hover:text-primary hover:border-primary/40">
+          <button onClick={() => { setCursor(new Date()); setSelected(today); }} className="px-3 py-1.5 rounded-lg text-xs font-medium border border-border text-text-muted hover:text-primary hover:border-primary/40">
             🎯 Hoje
           </button>
         </div>
