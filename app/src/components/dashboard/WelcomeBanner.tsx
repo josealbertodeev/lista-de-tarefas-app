@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { ClipboardCheck, Hourglass } from 'lucide-react';
 import { useTaskStore } from '../../stores/useTaskStore';
 import { ProgressRing } from '../common/ProgressRing';
-import { todayISO } from '../../lib/utils';
+import { useToday } from '../../lib/useToday';
 import { usePomodoroStore } from '../../stores/usePomodoroStore';
 import { useProfileStore } from '../../stores/useProfileStore';
 
@@ -11,7 +11,7 @@ export function WelcomeBanner() {
   const tasks = useTaskStore((s) => s.tasks);
   const focusMinutesToday = usePomodoroStore((s) => s.focusMinutesToday);
   const name = useProfileStore((s) => s.profile.name);
-  const today = todayISO();
+  const today = useToday();
 
   const { pendingToday, progressPercent } = useMemo(() => {
     const relevant = tasks.filter((t) => t.dueDate === today || t.status !== 'backlog');

@@ -1,17 +1,48 @@
 import { clsx } from 'clsx';
 import type { ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { format } from 'date-fns';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 export function uid(): string {
-  return crypto.randomUUID();
+  // crypto.randomUUID só existe em contexto seguro (https/localhost). Ao abrir o app
+  // pelo IP da rede local (http://192.168.x.x) ele é undefined, então precisamos do fallback.
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40; // versão 4
+    bytes[8] = (bytes[8] & 0x3f) | 0x80; // variante RFC 4122
+    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  }
+  return `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/**
+ * Data no formato YYYY-MM-DD no fuso LOCAL.
+ * Usa o mesmo `format` do date-fns que MonthGrid/WeekGrid usam, para que esta função
+ * e o `isToday` do date-fns nunca discordem sobre qual é o dia de hoje.
+ */
+export function localISO(date: Date = new Date()): string {
+  return format(date, 'yyyy-MM-dd');
 }
 
 export function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  return localISO();
+}
+
+/**
+ * Converte um timestamp ISO completo (createdAt/completedAt, gravados em UTC)
+ * para a data YYYY-MM-DD do fuso local. Fazer `.slice(0, 10)` no timestamp
+ * devolveria a data em UTC, que vira o dia seguinte no fim da tarde no Brasil.
+ */
+export function isoFromTimestamp(timestamp: string): string {
+  return localISO(new Date(timestamp));
 }
 
 export function nowHM(): string {
@@ -44,7 +75,7 @@ export function isPast(iso?: string): boolean {
 export function addDaysISO(iso: string, days: number): string {
   const [y, m, d] = iso.split('-').map(Number);
   const date = new Date(y, m - 1, d + days);
-  return date.toISOString().slice(0, 10);
+  return localISO(date);
 }
 
 export function clamp(value: number, min: number, max: number): number {

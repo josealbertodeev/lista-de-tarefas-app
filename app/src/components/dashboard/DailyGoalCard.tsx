@@ -1,12 +1,12 @@
 import { TrendingUp } from 'lucide-react';
 import { useTaskStore } from '../../stores/useTaskStore';
 import { useProfileStore } from '../../stores/useProfileStore';
-import { todayISO } from '../../lib/utils';
+import { useToday } from '../../lib/useToday';
 
 export function DailyGoalCard() {
   const tasks = useTaskStore((s) => s.tasks);
   const target = useProfileStore((s) => s.profile.dailyTaskTarget);
-  const today = todayISO();
+  const today = useToday();
 
   const todayTasks = tasks.filter((t) => t.dueDate === today);
   const done = todayTasks.filter((t) => t.status === 'completed').length;
