@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Star, Pencil, Trash2, Clock, Timer } from 'lucide-react';
 import type { Task } from '../../types';
 import { useTaskStore } from '../../stores/useTaskStore';
@@ -6,14 +6,18 @@ import { usePomodoroStore } from '../../stores/usePomodoroStore';
 import { CategoryBadge, PriorityBadge } from '../common/Badge';
 import { cn, isToday, isPast, formatDateBR } from '../../lib/utils';
 import { EditTaskModal } from '../modals/EditTaskModal';
-import { ConfirmDialog } from '../modals/Modal';
 import { playTaskCompleteSound } from '../../lib/audio';
 
-export function TaskItem({ task }: { task: Task }) {
-  const { toggleTaskCompletion, toggleFavorite, deleteTask } = useTaskStore();
-  const { setActiveTask, activeTaskId } = usePomodoroStore();
+function TaskItemComponent({ task }: { task: Task }) {
+  // Um seletor por ação em vez de desestruturar o store inteiro: como estava, cada
+  // linha assinava todas as mudanças do store e a lista inteira re-renderizava a
+  // cada edição. Ações do zustand têm referência estável, então isto não custa nada.
+  const toggleTaskCompletion = useTaskStore((s) => s.toggleTaskCompletion);
+  const toggleFavorite = useTaskStore((s) => s.toggleFavorite);
+  const deleteTask = useTaskStore((s) => s.deleteTask);
+  const setActiveTask = usePomodoroStore((s) => s.setActiveTask);
+  const activeTaskId = usePomodoroStore((s) => s.activeTaskId);
   const [editing, setEditing] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const completed = task.status === 'completed';
   const isActiveFocus = activeTaskId === task.id;
 
@@ -85,29 +89,37 @@ export function TaskItem({ task }: { task: Task }) {
         )}
       </div>
 
-      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+      <div className="flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100 transition-opacity shrink-0">
         <button
           onClick={() => toggleFavorite(task.id)}
+          title={task.isFavorite ? 'Remover dos favoritos' : 'Marcar como favorita'}
+          aria-label={task.isFavorite ? 'Remover dos favoritos' : 'Marcar como favorita'}
           className={cn('p-1.5 rounded-lg hover:bg-surface transition-colors', task.isFavorite ? 'text-yellow-400' : 'text-text-muted')}
         >
           <Star size={15} fill={task.isFavorite ? 'currentColor' : 'none'} />
         </button>
-        <button onClick={() => setEditing(true)} className="p-1.5 rounded-lg text-text-muted hover:bg-surface hover:text-text transition-colors">
+        <button
+          onClick={() => setEditing(true)}
+          title="Editar tarefa"
+          aria-label="Editar tarefa"
+          className="p-1.5 rounded-lg text-text-muted hover:bg-surface hover:text-text transition-colors"
+        >
           <Pencil size={15} />
         </button>
-        <button onClick={() => setConfirmDelete(true)} className="p-1.5 rounded-lg text-text-muted hover:bg-surface hover:text-red-400 transition-colors">
+        <button
+          onClick={() => deleteTask(task.id)}
+          title="Excluir tarefa"
+          aria-label="Excluir tarefa"
+          className="p-1.5 rounded-lg text-text-muted hover:bg-surface hover:text-red-400 transition-colors"
+        >
           <Trash2 size={15} />
         </button>
       </div>
 
       <EditTaskModal open={editing} onClose={() => setEditing(false)} task={task} />
-      <ConfirmDialog
-        open={confirmDelete}
-        onClose={() => setConfirmDelete(false)}
-        onConfirm={() => deleteTask(task.id)}
-        title="Excluir Tarefa?"
-        message="Tem certeza que deseja apagar esta tarefa? Esta ação não pode ser desfeita."
-      />
     </div>
   );
 }
+
+// memo evita repintar todas as linhas quando apenas uma tarefa muda.
+export const TaskItem = memo(TaskItemComponent);

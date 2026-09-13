@@ -1,9 +1,14 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { PlusCircle, X, Plus } from 'lucide-react';
 import { useTaskStore } from '../../stores/useTaskStore';
 import { CATEGORIES, CATEGORY_ICONS, PRIORITIES } from '../../types';
 import type { Category, Priority } from '../../types';
 import { cn, todayISO } from '../../lib/utils';
+import { validateDate, validateTitle } from '../../lib/validation';
+import type { FormErrors } from '../../lib/validation';
+import { FieldError, inputErrorClass } from '../common/FormError';
+
+type TaskField = 'title' | 'dueDate';
 
 export function TaskCreateBox() {
   const addTask = useTaskStore((s) => s.addTask);
@@ -11,11 +16,25 @@ export function TaskCreateBox() {
   const [category, setCategory] = useState<Category>('Trabalho');
   const [priority, setPriority] = useState<Priority>('Média');
   const [dueDate, setDueDate] = useState(todayISO());
+  const [errors, setErrors] = useState<FormErrors<TaskField>>({});
+  const titleRef = useRef<HTMLInputElement>(null);
+
+  const validate = (): FormErrors<TaskField> => ({
+    title: validateTitle(title, 'Digite o que precisa ser feito para criar a tarefa.'),
+    // O vencimento é opcional: só checamos o formato quando o campo está preenchido.
+    dueDate: dueDate.trim() ? validateDate(dueDate, '') : undefined,
+  });
 
   const submit = () => {
-    if (!title.trim()) return;
-    addTask({ title: title.trim(), category, priority, dueDate, pomodoroEstimate: 1 });
+    const found = validate();
+    setErrors(found);
+    if (found.title || found.dueDate) {
+      if (found.title) titleRef.current?.focus();
+      return;
+    }
+    addTask({ title: title.trim(), category, priority, dueDate: dueDate.trim() || undefined, pomodoroEstimate: 1 });
     setTitle('');
+    setErrors({});
   };
 
   return (
@@ -30,17 +49,28 @@ export function TaskCreateBox() {
       <div className="space-y-3">
         <div className="relative">
           <input
+            ref={titleRef}
+            data-new-task-input
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              // Some o erro assim que o usuário começa a corrigir o campo.
+              if (errors.title) setErrors((prev) => ({ ...prev, title: undefined }));
+            }}
             onKeyDown={(e) => e.key === 'Enter' && submit()}
+            aria-invalid={!!errors.title}
             placeholder="O que precisa ser feito hoje? Ex: Revisar sprint trimestral..."
-            className="w-full h-12 pl-4 pr-10 rounded-xl bg-surface-hover border border-border text-text placeholder:text-text-muted focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30"
+            className={cn(
+              'w-full h-12 pl-4 pr-10 rounded-xl bg-surface-hover border border-border text-text placeholder:text-text-muted focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30',
+              errors.title && inputErrorClass
+            )}
           />
           {title && (
             <button onClick={() => setTitle('')} className="absolute right-2 top-2 p-2 text-text-muted hover:text-text">
               <X size={16} />
             </button>
           )}
+          <FieldError message={errors.title} />
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -77,11 +107,21 @@ export function TaskCreateBox() {
             <input
               type="date"
               value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-surface-hover border border-border text-text focus:outline-none"
+              onChange={(e) => {
+                setDueDate(e.target.value);
+                if (errors.dueDate) setErrors((prev) => ({ ...prev, dueDate: undefined }));
+              }}
+              aria-invalid={!!errors.dueDate}
+              title={errors.dueDate}
+              className={cn(
+                'px-2.5 py-1.5 rounded-lg text-xs font-medium bg-surface-hover border border-border text-text focus:outline-none',
+                errors.dueDate && inputErrorClass
+              )}
             />
           </div>
         </div>
+
+        <FieldError message={errors.dueDate} className="justify-end" />
 
         <div className="flex justify-end pt-1">
           <button

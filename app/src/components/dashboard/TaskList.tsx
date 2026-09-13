@@ -2,38 +2,56 @@ import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ListChecks, CheckCircle2, Trash2 } from 'lucide-react';
 import { useTaskStore } from '../../stores/useTaskStore';
+import { useTaskFilterStore } from '../../stores/useTaskFilterStore';
 import { TaskItem } from './TaskItem';
+import { TaskFilters } from './TaskFilters';
 import { cn } from '../../lib/utils';
+import { useToday } from '../../lib/useToday';
+import { filterSortTasks, isFilterActive } from '../../lib/taskQuery';
 import { ConfirmDialog } from '../modals/Modal';
-import { PRIORITIES } from '../../types';
-
-const PRIORITY_ORDER = Object.fromEntries(PRIORITIES.map((p, i) => [p, i]));
 
 export function TaskList() {
   const tasks = useTaskStore((s) => s.tasks);
   const clearCompletedTasks = useTaskStore((s) => s.clearCompletedTasks);
-  const [tab, setTab] = useState<'pending' | 'completed'>('pending');
   const [confirmClear, setConfirmClear] = useState(false);
+  const today = useToday();
 
-  const pending = useMemo(
-    () => [...tasks].filter((t) => t.status !== 'completed').sort((a, b) => PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority]),
+  const tab = useTaskFilterStore((s) => s.tab);
+  const setTab = useTaskFilterStore((s) => s.setTab);
+  const query = useTaskFilterStore((s) => s.query);
+  const categories = useTaskFilterStore((s) => s.categories);
+  const priorities = useTaskFilterStore((s) => s.priorities);
+  const onlyFavorites = useTaskFilterStore((s) => s.onlyFavorites);
+  const onlyOverdue = useTaskFilterStore((s) => s.onlyOverdue);
+  const sort = useTaskFilterStore((s) => s.sort);
+  const dir = useTaskFilterStore((s) => s.dir);
+
+  const filters = useMemo(
+    () => ({ query, categories, priorities, onlyFavorites, onlyOverdue, sort, dir }),
+    [query, categories, priorities, onlyFavorites, onlyOverdue, sort, dir]
+  );
+
+  const totals = useMemo(
+    () => ({
+      pending: tasks.filter((t) => t.status !== 'completed').length,
+      completed: tasks.filter((t) => t.status === 'completed').length,
+    }),
     [tasks]
   );
-  const completed = useMemo(
-    () => [...tasks].filter((t) => t.status === 'completed').sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? '')),
-    [tasks]
-  );
 
-  const list = tab === 'pending' ? pending : completed;
+  const list = useMemo(() => filterSortTasks(tasks, filters, tab, today), [tasks, filters, tab, today]);
+
+  const totalInTab = tab === 'pending' ? totals.pending : totals.completed;
+  const filtering = isFilterActive(filters);
 
   return (
     <div className="bg-surface border border-border rounded-2xl p-5 sm:p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-1 p-1 rounded-xl bg-surface-hover border border-border">
-          <TabButton active={tab === 'pending'} onClick={() => setTab('pending')} icon={<ListChecks size={14} />} label="Pendentes" count={pending.length} />
-          <TabButton active={tab === 'completed'} onClick={() => setTab('completed')} icon={<CheckCircle2 size={14} />} label="Concluídas" count={completed.length} />
+          <TabButton active={tab === 'pending'} onClick={() => setTab('pending')} icon={<ListChecks size={14} />} label="Pendentes" count={totals.pending} />
+          <TabButton active={tab === 'completed'} onClick={() => setTab('completed')} icon={<CheckCircle2 size={14} />} label="Concluídas" count={totals.completed} />
         </div>
-        {tab === 'completed' && completed.length > 0 && (
+        {tab === 'completed' && totals.completed > 0 && (
           <button
             onClick={() => setConfirmClear(true)}
             className="p-1.5 rounded-lg text-text-muted hover:bg-surface-hover hover:text-red-400 transition-colors"
@@ -44,9 +62,15 @@ export function TaskList() {
         )}
       </div>
 
+      <TaskFilters shown={list.length} total={totalInTab} />
+
       {list.length === 0 ? (
         <div className="text-center py-10 text-sm text-text-muted">
-          {tab === 'pending' ? 'Nenhuma tarefa pendente 🎉' : 'Nenhuma tarefa concluída ainda'}
+          {filtering
+            ? 'Nenhuma tarefa corresponde aos filtros.'
+            : tab === 'pending'
+              ? 'Nenhuma tarefa pendente 🎉'
+              : 'Nenhuma tarefa concluída ainda'}
         </div>
       ) : (
         <div className="space-y-2">
@@ -61,7 +85,7 @@ export function TaskList() {
         onClose={() => setConfirmClear(false)}
         onConfirm={clearCompletedTasks}
         title="Limpar Concluídas?"
-        message="Todas as tarefas concluídas serão apagadas permanentemente."
+        message="Todas as tarefas concluídas serão apagadas. Você poderá desfazer logo em seguida."
       />
     </div>
   );

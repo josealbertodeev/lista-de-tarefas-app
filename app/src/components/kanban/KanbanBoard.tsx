@@ -3,6 +3,7 @@ import { DragDropContext } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import { Plus, Search } from 'lucide-react';
 import { useTaskStore } from '../../stores/useTaskStore';
+import { uid } from '../../lib/utils';
 import type { Task, TaskStatus } from '../../types';
 import { KanbanColumn } from './KanbanColumn';
 import { EditTaskModal } from '../modals/EditTaskModal';
@@ -18,13 +19,13 @@ const COLUMNS: { status: TaskStatus; title: string }[] = [
 
 export function KanbanBoard() {
   const tasks = useTaskStore((s) => s.tasks);
-  const addTask = useTaskStore((s) => s.addTask);
   const moveTask = useTaskStore((s) => s.moveTask);
   const focusMinutesToday = usePomodoroStore((s) => s.focusMinutesToday);
   const dailyTarget = usePomodoroStore((s) => s.sessionsCompletedToday);
   const [filter, setFilter] = useState('');
   const [category, setCategory] = useState<string>('all');
-  const [showNewTaskModal, setShowNewTaskModal] = useState<Task | null>(null);
+  // Rascunho mantido só em memória: nada entra no quadro antes de o formulário ser validado.
+  const [draftTask, setDraftTask] = useState<Task | null>(null);
 
   const filtered = useMemo(
     () =>
@@ -43,8 +44,17 @@ export function KanbanBoard() {
   };
 
   const quickAdd = () => {
-    const task = addTask({ title: 'Nova tarefa', category: 'Trabalho', priority: 'Média', pomodoroEstimate: 1 });
-    setShowNewTaskModal(task);
+    setDraftTask({
+      id: uid(),
+      title: '',
+      category: 'Trabalho',
+      priority: 'Média',
+      status: 'backlog',
+      pomodoroEstimate: 1,
+      pomodorosCompleted: 0,
+      subtasks: [],
+      createdAt: new Date().toISOString(),
+    });
   };
 
   return (
@@ -105,7 +115,7 @@ export function KanbanBoard() {
         </span>
       </div>
 
-      {showNewTaskModal && <EditTaskModal open={!!showNewTaskModal} onClose={() => setShowNewTaskModal(null)} task={showNewTaskModal} />}
+      {draftTask && <EditTaskModal open={!!draftTask} onClose={() => setDraftTask(null)} task={draftTask} isNew />}
     </div>
   );
 }
