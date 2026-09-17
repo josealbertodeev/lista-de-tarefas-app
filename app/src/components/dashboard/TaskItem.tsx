@@ -1,5 +1,6 @@
 import { memo, useState } from 'react';
 import type { CSSProperties } from 'react';
+import type { DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
 import { Star, Pencil, Trash2, Clock, Timer, GripVertical } from 'lucide-react';
 import type { Task } from '../../types';
 import { useTaskStore } from '../../stores/useTaskStore';
@@ -11,7 +12,7 @@ import { playTaskCompleteSound } from '../../lib/audio';
 
 interface TaskItemProps {
   task: Task;
-  dragHandleProps?: Record<string, unknown>;
+  dragHandleProps?: DraggableProvidedDragHandleProps | null;
   isDragging?: boolean;
   style?: CSSProperties;
 }

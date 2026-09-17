@@ -85,7 +85,7 @@ export function TaskList() {
                   <Draggable key={task.id} draggableId={task.id} index={index}>
                     {(dragProvided, dragSnapshot) => (
                       <div ref={dragProvided.innerRef} {...dragProvided.draggableProps}>
-                        <TaskItem task={task} dragHandleProps={dragProvided.dragHandleProps ?? undefined} isDragging={dragSnapshot.isDragging} />
+                        <TaskItem task={task} dragHandleProps={dragProvided.dragHandleProps} isDragging={dragSnapshot.isDragging} />
                       </div>
                     )}
                   </Draggable>

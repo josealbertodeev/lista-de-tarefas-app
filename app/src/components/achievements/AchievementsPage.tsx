@@ -7,6 +7,7 @@ import { xpForLevel, cn, formatDateBR, isoFromTimestamp } from '../../lib/utils'
 import { useToday } from '../../lib/useToday';
 import { ACHIEVEMENTS, achievementPercent } from '../../lib/achievements';
 import type { AchievementContext, AchievementDef } from '../../lib/achievements';
+import type { Achievement } from '../../types';
 
 /** Selos de menos XP viram bronze, os de mais XP viram diamante — dá pra ver de longe qual vale mais. */
 interface Tier {
@@ -130,7 +131,7 @@ function AchievementCard({
   ctx,
   highlight,
 }: {
-  entry: { def: AchievementDef; earned?: { unlockedAt: string }; percent: number };
+  entry: { def: AchievementDef; earned?: Achievement; percent: number };
   ctx: AchievementContext;
   highlight?: boolean;
 }) {
