@@ -1,32 +1,79 @@
-# React + TypeScript + Vite
+# ✅ Minhas Tarefas
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Um organizador pessoal que cabe no dia a dia: tarefas, compromissos, metas e foco em um lugar só — sem cadastro, sem servidor, tudo salvo no seu navegador.
 
-Currently, two official plugins are available:
+🔗 **[Acessar o app](https://josealbertodeev.github.io/lista-de-tarefas-app/)**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+![Painel do Minhas Tarefas: saudação com nível, criação de tarefa, meta diária, timer pomodoro e próximos compromissos](docs/screenshot.png)
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ✨ O que ele faz
 
-## Expanding the Oxlint configuration
+| | |
+|---|---|
+| 📝 **Tarefas** | Prioridade, categoria, prazo, subtarefas e favoritos. Arraste para reordenar. |
+| 📋 **Quadro Kanban** | As mesmas tarefas em colunas, movidas com arrastar e soltar. |
+| 📅 **Calendário** | Visão de mês e semana, compromissos recorrentes e feriados nacionais. |
+| 🎯 **Metas** | Progresso por percentual ou por métrica (ex: 7 de 10 livros), com gráficos. |
+| 🍅 **Pomodoro** | Ciclos de foco e pausa ligados a uma tarefa específica. |
+| 🏆 **Conquistas** | 10 conquistas e um sistema de XP e níveis que acompanha sua constância. |
+| 🔔 **Lembretes** | Avisos do navegador na hora do compromisso. |
+| 🌓 **Tema** | Claro e escuro. |
+| 💾 **Backup** | Exporte e importe tudo em um arquivo JSON. |
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+---
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+## 🚀 Rodando na sua máquina
+
+Você precisa do [Node.js 20+](https://nodejs.org).
+
+```bash
+git clone https://github.com/josealbertodeev/lista-de-tarefas-app.git
+cd lista-de-tarefas-app
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Abra o endereço que aparecer no terminal (normalmente `http://localhost:5173`) e pronto. 🎉
+
+---
+
+## 📜 Comandos
+
+| Comando | Para quê |
+|---|---|
+| `npm run dev` | Sobe o app em modo desenvolvimento, recarregando a cada alteração. |
+| `npm test` | Roda os testes. |
+| `npm run lint` | Procura problemas no código. |
+| `npm run build` | Gera a versão de produção na pasta `dist/`. |
+| `npm run preview` | Abre localmente o que o `build` gerou. |
+
+---
+
+## 🛠️ Feito com
+
+**React 19** · **TypeScript** · **Vite** · **Tailwind CSS** · **Zustand** (estado) · **Recharts** (gráficos) · **Vitest** (testes)
+
+---
+
+## 🗂️ Como o código está organizado
+
+```
+src/
+├── components/   # Telas e peças de interface, agrupadas por área
+├── stores/       # Estado global (tarefas, perfil, pomodoro, notificações)
+├── lib/          # Regras de negócio e utilitários — é onde vivem os testes
+└── types/        # Tipos compartilhados
+```
+
+---
+
+## 💾 Onde ficam os seus dados
+
+Tudo é salvo no **`localStorage` do seu navegador**. Nada sai da sua máquina, e não existe conta nem sincronização entre aparelhos.
+
+> ⚠️ Limpar os dados do navegador apaga tudo. Antes disso, use **Configurações → Exportar Dados**.
+
+---
+

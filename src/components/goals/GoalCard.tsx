@@ -43,7 +43,7 @@ export function GoalCard({ goal, index = 0 }: { goal: Goal; index?: number }) {
             onClick={() => setEditing(true)}
             title="Editar meta"
             aria-label="Editar meta"
-            className="p-1.5 rounded-lg text-text-muted hover:bg-surface-hover hover:text-primary transition-colors"
+            className="p-1.5 rounded-lg text-blue-400 hover:bg-blue-400/10 transition-colors"
           >
             <Pencil size={14} />
           </button>
@@ -51,7 +51,7 @@ export function GoalCard({ goal, index = 0 }: { goal: Goal; index?: number }) {
             onClick={() => setConfirmDelete(true)}
             title="Excluir meta"
             aria-label="Excluir meta"
-            className="p-1.5 rounded-lg text-text-muted hover:bg-surface-hover hover:text-red-400 transition-colors"
+            className="p-1.5 rounded-lg text-red-400 hover:bg-red-400/10 transition-colors"
           >
             <Trash2 size={14} />
           </button>
@@ -86,7 +86,7 @@ export function GoalCard({ goal, index = 0 }: { goal: Goal; index?: number }) {
               onClick={() => bumpMetric(-1)}
               title="Diminuir 1"
               aria-label="Diminuir 1"
-              className="w-6 h-6 rounded-md bg-surface-hover border border-border flex items-center justify-center text-text-muted hover:text-text hover:border-primary/40 transition-colors"
+              className="w-6 h-6 rounded-md bg-surface-hover border border-border flex items-center justify-center text-amber-400 hover:bg-amber-400/10 hover:border-amber-400/40 transition-colors"
             >
               <Minus size={12} />
             </button>
@@ -94,7 +94,7 @@ export function GoalCard({ goal, index = 0 }: { goal: Goal; index?: number }) {
               onClick={() => bumpMetric(1)}
               title="Aumentar 1"
               aria-label="Aumentar 1"
-              className="w-6 h-6 rounded-md bg-surface-hover border border-border flex items-center justify-center text-text-muted hover:text-primary hover:border-primary/40 transition-colors"
+              className="w-6 h-6 rounded-md bg-surface-hover border border-border flex items-center justify-center text-primary hover:bg-primary/10 hover:border-primary/40 transition-colors"
             >
               <Plus size={12} />
             </button>
