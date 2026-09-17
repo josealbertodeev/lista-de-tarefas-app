@@ -1,35 +1,36 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import type { DropResult } from '@hello-pangea/dnd';
 import { ListChecks, CheckCircle2, Trash2 } from 'lucide-react';
 import { useTaskStore } from '../../stores/useTaskStore';
 import { useTaskFilterStore } from '../../stores/useTaskFilterStore';
 import { TaskItem } from './TaskItem';
-import { TaskFilters } from './TaskFilters';
 import { cn } from '../../lib/utils';
 import { useToday } from '../../lib/useToday';
-import { filterSortTasks, isFilterActive } from '../../lib/taskQuery';
+import { filterSortTasks } from '../../lib/taskQuery';
+import type { TaskFilters } from '../../lib/taskQuery';
 import { ConfirmDialog } from '../modals/Modal';
+
+const COMPLETED_FILTERS: TaskFilters = {
+  query: '',
+  categories: [],
+  priorities: [],
+  onlyFavorites: false,
+  onlyOverdue: false,
+  sort: 'priority',
+  dir: 'desc',
+};
 
 export function TaskList() {
   const tasks = useTaskStore((s) => s.tasks);
   const clearCompletedTasks = useTaskStore((s) => s.clearCompletedTasks);
+  const reorderTasks = useTaskStore((s) => s.reorderTasks);
   const [confirmClear, setConfirmClear] = useState(false);
   const today = useToday();
 
   const tab = useTaskFilterStore((s) => s.tab);
   const setTab = useTaskFilterStore((s) => s.setTab);
-  const query = useTaskFilterStore((s) => s.query);
-  const categories = useTaskFilterStore((s) => s.categories);
-  const priorities = useTaskFilterStore((s) => s.priorities);
-  const onlyFavorites = useTaskFilterStore((s) => s.onlyFavorites);
-  const onlyOverdue = useTaskFilterStore((s) => s.onlyOverdue);
-  const sort = useTaskFilterStore((s) => s.sort);
-  const dir = useTaskFilterStore((s) => s.dir);
-
-  const filters = useMemo(
-    () => ({ query, categories, priorities, onlyFavorites, onlyOverdue, sort, dir }),
-    [query, categories, priorities, onlyFavorites, onlyOverdue, sort, dir]
-  );
 
   const totals = useMemo(
     () => ({
@@ -39,10 +40,19 @@ export function TaskList() {
     [tasks]
   );
 
-  const list = useMemo(() => filterSortTasks(tasks, filters, tab, today), [tasks, filters, tab, today]);
+  // Pendentes ficam na ordem que o usuário arrastar; concluídas seguem sempre por data de conclusão.
+  const list = useMemo(
+    () => (tab === 'pending' ? tasks.filter((t) => t.status !== 'completed') : filterSortTasks(tasks, COMPLETED_FILTERS, tab, today)),
+    [tasks, tab, today]
+  );
 
-  const totalInTab = tab === 'pending' ? totals.pending : totals.completed;
-  const filtering = isFilterActive(filters);
+  const onDragEnd = (result: DropResult) => {
+    if (!result.destination || result.destination.index === result.source.index) return;
+    const reordered = [...list];
+    const [moved] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, moved);
+    reorderTasks(reordered.map((t) => t.id));
+  };
 
   return (
     <div className="bg-surface border border-border rounded-2xl p-5 sm:p-6 shadow-sm">
@@ -62,16 +72,29 @@ export function TaskList() {
         )}
       </div>
 
-      <TaskFilters shown={list.length} total={totalInTab} />
-
       {list.length === 0 ? (
         <div className="text-center py-10 text-sm text-text-muted">
-          {filtering
-            ? 'Nenhuma tarefa corresponde aos filtros.'
-            : tab === 'pending'
-              ? 'Nenhuma tarefa pendente 🎉'
-              : 'Nenhuma tarefa concluída ainda'}
+          {tab === 'pending' ? 'Nenhuma tarefa pendente 🎉' : 'Nenhuma tarefa concluída ainda'}
         </div>
+      ) : tab === 'pending' ? (
+        <DragDropContext onDragEnd={onDragEnd}>
+          <Droppable droppableId="pending-tasks">
+            {(provided) => (
+              <div className="space-y-2" ref={provided.innerRef} {...provided.droppableProps}>
+                {list.map((task, index) => (
+                  <Draggable key={task.id} draggableId={task.id} index={index}>
+                    {(dragProvided, dragSnapshot) => (
+                      <div ref={dragProvided.innerRef} {...dragProvided.draggableProps}>
+                        <TaskItem task={task} dragHandleProps={dragProvided.dragHandleProps ?? undefined} isDragging={dragSnapshot.isDragging} />
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
       ) : (
         <div className="space-y-2">
           {list.map((task) => (

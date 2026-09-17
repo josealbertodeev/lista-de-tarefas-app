@@ -9,8 +9,8 @@ const TABS: { key: AppView; label: string }[] = [
   { key: 'dashboard', label: 'Tarefas' },
   { key: 'kanban', label: 'Quadro' },
   { key: 'calendar', label: 'Calendário' },
-  { key: 'gantt', label: 'Linha do Tempo' },
   { key: 'goals', label: 'Metas' },
+  { key: 'achievements', label: 'Conquistas' },
 ];
 
 export function Header({ view, onNavigate }: { view: AppView; onNavigate: (v: AppView) => void }) {

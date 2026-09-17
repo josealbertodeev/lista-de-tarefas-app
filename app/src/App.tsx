@@ -4,8 +4,8 @@ import { MobileNav } from './components/layout/MobileNav';
 import { Dashboard } from './components/dashboard/Dashboard';
 import { KanbanBoard } from './components/kanban/KanbanBoard';
 import { CalendarView } from './components/calendar/CalendarView';
-import { GanttChart } from './components/gantt/GanttChart';
 import { GoalsStats } from './components/goals/GoalsStats';
+import { AchievementsPage } from './components/achievements/AchievementsPage';
 import { SettingsProfile } from './components/settings/SettingsProfile';
 import { PomodoroEngine } from './components/dashboard/PomodoroEngine';
 import { ReminderEngine } from './components/dashboard/ReminderEngine';
@@ -14,9 +14,9 @@ import { Confetti } from './components/common/Confetti';
 import { UndoToast } from './components/common/UndoToast';
 import { useProfileStore } from './stores/useProfileStore';
 
-export type AppView = 'dashboard' | 'kanban' | 'calendar' | 'gantt' | 'goals' | 'settings';
+export type AppView = 'dashboard' | 'kanban' | 'calendar' | 'goals' | 'achievements' | 'settings';
 
-const VIEWS: AppView[] = ['dashboard', 'kanban', 'calendar', 'gantt', 'goals', 'settings'];
+const VIEWS: AppView[] = ['dashboard', 'kanban', 'calendar', 'goals', 'achievements', 'settings'];
 
 function viewFromHash(): AppView {
   const candidate = window.location.hash.replace('#', '');
@@ -45,15 +45,19 @@ function App() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
+  const focusNewTaskInput = () => {
+    setView('dashboard');
+    requestAnimationFrame(() => {
+      document.querySelector<HTMLInputElement>('[data-new-task-input]')?.focus();
+    });
+  };
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'n') {
         e.preventDefault();
         // Antes isto apenas trocava de tela; agora leva o foco ao campo de criação.
-        setView('dashboard');
-        requestAnimationFrame(() => {
-          document.querySelector<HTMLInputElement>('[data-new-task-input]')?.focus();
-        });
+        focusNewTaskInput();
       }
     };
     window.addEventListener('keydown', handler);
@@ -72,11 +76,11 @@ function App() {
         {view === 'dashboard' && <Dashboard />}
         {view === 'kanban' && <KanbanBoard />}
         {view === 'calendar' && <CalendarView />}
-        {view === 'gantt' && <GanttChart />}
         {view === 'goals' && <GoalsStats />}
+        {view === 'achievements' && <AchievementsPage />}
         {view === 'settings' && <SettingsProfile />}
       </main>
-      <MobileNav view={view} onNavigate={setView} onQuickAdd={() => setView('dashboard')} />
+      <MobileNav view={view} onNavigate={setView} />
     </div>
   );
 }

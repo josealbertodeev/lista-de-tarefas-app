@@ -1,5 +1,6 @@
 import { memo, useState } from 'react';
-import { Star, Pencil, Trash2, Clock, Timer } from 'lucide-react';
+import type { CSSProperties } from 'react';
+import { Star, Pencil, Trash2, Clock, Timer, GripVertical } from 'lucide-react';
 import type { Task } from '../../types';
 import { useTaskStore } from '../../stores/useTaskStore';
 import { usePomodoroStore } from '../../stores/usePomodoroStore';
@@ -8,7 +9,14 @@ import { cn, isToday, isPast, formatDateBR } from '../../lib/utils';
 import { EditTaskModal } from '../modals/EditTaskModal';
 import { playTaskCompleteSound } from '../../lib/audio';
 
-function TaskItemComponent({ task }: { task: Task }) {
+interface TaskItemProps {
+  task: Task;
+  dragHandleProps?: Record<string, unknown>;
+  isDragging?: boolean;
+  style?: CSSProperties;
+}
+
+function TaskItemComponent({ task, dragHandleProps, isDragging, style }: TaskItemProps) {
   // Um seletor por ação em vez de desestruturar o store inteiro: como estava, cada
   // linha assinava todas as mudanças do store e a lista inteira re-renderizava a
   // cada edição. Ações do zustand têm referência estável, então isto não custa nada.
@@ -34,12 +42,27 @@ function TaskItemComponent({ task }: { task: Task }) {
 
   return (
     <div
+      style={style}
       className={cn(
         'group flex items-start gap-3 p-3 rounded-xl border transition-colors',
-        completed ? 'bg-surface-hover/50 border-border' : 'bg-surface-hover border-border hover:border-primary/30',
-        isActiveFocus && 'ring-1 ring-primary/40'
+        completed
+          ? 'bg-surface-hover/50 border-border'
+          : 'bg-surface-hover border-border hover:bg-surface hover:border-primary/30',
+        isActiveFocus && 'ring-1 ring-primary/40',
+        isDragging && 'shadow-lg ring-1 ring-primary/40 bg-surface'
       )}
     >
+      {dragHandleProps && (
+        <button
+          {...dragHandleProps}
+          title="Arrastar para reordenar"
+          aria-label="Arrastar para reordenar"
+          className="mt-0.5 p-0.5 rounded text-text-muted/0 group-hover:text-text-muted hover:text-text cursor-grab active:cursor-grabbing shrink-0 transition-colors"
+        >
+          <GripVertical size={15} />
+        </button>
+      )}
+
       <button
         onClick={handleToggle}
         className={cn(
@@ -94,7 +117,7 @@ function TaskItemComponent({ task }: { task: Task }) {
           onClick={() => toggleFavorite(task.id)}
           title={task.isFavorite ? 'Remover dos favoritos' : 'Marcar como favorita'}
           aria-label={task.isFavorite ? 'Remover dos favoritos' : 'Marcar como favorita'}
-          className={cn('p-1.5 rounded-lg hover:bg-surface transition-colors', task.isFavorite ? 'text-yellow-400' : 'text-text-muted')}
+          className="p-1.5 rounded-lg text-yellow-400 hover:bg-surface transition-colors"
         >
           <Star size={15} fill={task.isFavorite ? 'currentColor' : 'none'} />
         </button>
@@ -102,7 +125,7 @@ function TaskItemComponent({ task }: { task: Task }) {
           onClick={() => setEditing(true)}
           title="Editar tarefa"
           aria-label="Editar tarefa"
-          className="p-1.5 rounded-lg text-text-muted hover:bg-surface hover:text-text transition-colors"
+          className="p-1.5 rounded-lg text-blue-400 hover:bg-surface transition-colors"
         >
           <Pencil size={15} />
         </button>
@@ -110,7 +133,7 @@ function TaskItemComponent({ task }: { task: Task }) {
           onClick={() => deleteTask(task.id)}
           title="Excluir tarefa"
           aria-label="Excluir tarefa"
-          className="p-1.5 rounded-lg text-text-muted hover:bg-surface hover:text-red-400 transition-colors"
+          className="p-1.5 rounded-lg text-red-400 hover:bg-surface transition-colors"
         >
           <Trash2 size={15} />
         </button>

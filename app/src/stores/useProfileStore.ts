@@ -45,6 +45,27 @@ export function titleForLevel(level: number): string {
   return TITLES[clamp(level - 1, 0, TITLES.length - 1)];
 }
 
+export interface LevelStyle {
+  /** Classes de gradiente Tailwind (from-... to-...) para o fundo do selo. */
+  gradient: string;
+  /** Cor do brilho pulsante, em rgba — usada via CSS custom property. */
+  glow: string;
+}
+
+/** Uma cor por título, ficando mais vibrante conforme o nível sobe. */
+const LEVEL_STYLES: LevelStyle[] = [
+  { gradient: 'from-slate-500 to-slate-400', glow: 'rgba(148,163,184,0.5)' },
+  { gradient: 'from-emerald-500 to-teal-400', glow: 'rgba(16,185,129,0.5)' },
+  { gradient: 'from-blue-500 to-cyan-400', glow: 'rgba(59,130,246,0.5)' },
+  { gradient: 'from-violet-500 to-purple-400', glow: 'rgba(167,139,250,0.5)' },
+  { gradient: 'from-amber-500 to-orange-400', glow: 'rgba(251,146,60,0.5)' },
+  { gradient: 'from-pink-500 via-fuchsia-500 to-yellow-400', glow: 'rgba(232,121,249,0.55)' },
+];
+
+export function styleForLevel(level: number): LevelStyle {
+  return LEVEL_STYLES[clamp(level - 1, 0, LEVEL_STYLES.length - 1)];
+}
+
 function applyThemeClass(theme: ThemeMode) {
   const root = document.documentElement;
   if (theme === 'dark') root.classList.add('dark');

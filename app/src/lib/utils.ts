@@ -7,6 +7,15 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** Marca como feriado qualquer tarefa/compromisso cujo título mencione a palavra. */
+export function isHolidayTitle(title: string): boolean {
+  return title
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .includes('feriado');
+}
+
 export function uid(): string {
   // crypto.randomUUID só existe em contexto seguro (https/localhost). Ao abrir o app
   // pelo IP da rede local (http://192.168.x.x) ele é undefined, então precisamos do fallback.

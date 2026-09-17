@@ -22,6 +22,8 @@ interface TaskStoreState {
   updateTask: (id: string, patch: Partial<Task>) => void;
   deleteTask: (id: string) => void;
   moveTask: (id: string, status: TaskStatus) => void;
+  /** Reordena manualmente: as tarefas em `orderedIds` passam a vir primeiro, nessa ordem. */
+  reorderTasks: (orderedIds: string[]) => void;
   toggleTaskCompletion: (id: string) => void;
   toggleFavorite: (id: string) => void;
   toggleSubtask: (taskId: string, subtaskId: string) => void;
@@ -112,6 +114,16 @@ export const useTaskStore = create<TaskStoreState>()(
           lastCompletedTaskId: becameCompleted ? id : s.lastCompletedTaskId,
         }));
       },
+
+      reorderTasks: (orderedIds) =>
+        set((s) => {
+          const idSet = new Set(orderedIds);
+          const reordered = orderedIds
+            .map((id) => s.tasks.find((t) => t.id === id))
+            .filter((t): t is Task => !!t);
+          const rest = s.tasks.filter((t) => !idSet.has(t.id));
+          return { tasks: [...reordered, ...rest] };
+        }),
 
       toggleTaskCompletion: (id) => {
         const task = get().tasks.find((t) => t.id === id);

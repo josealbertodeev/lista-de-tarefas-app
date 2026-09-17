@@ -205,6 +205,20 @@ textarea {
   animation: shimmer 2.2s linear infinite;
 }
 
+/* ---- Selo de nível (cor e brilho variam por título, via --level-glow) ---- */
+@keyframes level-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--level-glow, rgba(16, 185, 129, 0.45));
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(0, 0, 0, 0);
+  }
+}
+.level-badge {
+  animation: level-pulse 2.4s ease-in-out infinite;
+}
+
 /* ---- Indicador de "hoje" no calendário ---- */
 @keyframes today-pulse {
   0%,
@@ -224,6 +238,7 @@ textarea {
   .progress-fill,
   .progress-shimmer,
   .today-ring,
+  .level-badge,
   .hover-lift {
     animation: none !important;
     transition: none !important;

@@ -4,7 +4,6 @@ import { DailyGoalCard } from './DailyGoalCard';
 import { TaskList } from './TaskList';
 import { PomodoroCard } from './PomodoroCard';
 import { UpcomingAppointments } from './UpcomingAppointments';
-import { AchievementsCard } from './AchievementsCard';
 
 export function Dashboard() {
   return (
@@ -19,7 +18,6 @@ export function Dashboard() {
         <section className="lg:col-span-4 flex flex-col gap-6">
           <PomodoroCard />
           <UpcomingAppointments />
-          <AchievementsCard />
         </section>
       </div>
     </div>

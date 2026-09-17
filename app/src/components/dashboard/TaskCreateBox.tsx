@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { PlusCircle, X, Plus } from 'lucide-react';
 import { useTaskStore } from '../../stores/useTaskStore';
-import { CATEGORIES, CATEGORY_ICONS, PRIORITIES } from '../../types';
+import { CATEGORIES, CATEGORY_ICONS, PRIORITIES, PRIORITY_COLORS } from '../../types';
 import type { Category, Priority } from '../../types';
 import { cn, todayISO } from '../../lib/utils';
 import { validateDate, validateTitle } from '../../lib/validation';
@@ -73,57 +73,47 @@ export function TaskCreateBox() {
           <FieldError message={errors.title} />
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setCategory(cat)}
-                className={cn(
-                  'px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors flex items-center gap-1',
-                  category === cat
-                    ? 'bg-primary/10 border-primary/40 text-primary'
-                    : 'bg-surface-hover border-border text-text-muted hover:text-text'
-                )}
-              >
-                <span>{CATEGORY_ICONS[cat]}</span>
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <select
-              value={priority}
-              onChange={(e) => setPriority(e.target.value as Priority)}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-surface-hover border border-border text-text focus:outline-none"
-            >
-              {PRIORITIES.map((p) => (
-                <option key={p} value={p}>
-                  ⭐ {p}
-                </option>
-              ))}
-            </select>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(e) => {
-                setDueDate(e.target.value);
-                if (errors.dueDate) setErrors((prev) => ({ ...prev, dueDate: undefined }));
-              }}
-              aria-invalid={!!errors.dueDate}
-              title={errors.dueDate}
-              className={cn(
-                'px-2.5 py-1.5 rounded-lg text-xs font-medium bg-surface-hover border border-border text-text focus:outline-none',
-                errors.dueDate && inputErrorClass
-              )}
-            />
-          </div>
-        </div>
-
         <FieldError message={errors.dueDate} className="justify-end" />
 
-        <div className="flex justify-end pt-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value as Category)}
+            className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-surface-hover border border-border text-text focus:outline-none"
+          >
+            {CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>
+                {CATEGORY_ICONS[cat]} {cat}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={priority}
+            onChange={(e) => setPriority(e.target.value as Priority)}
+            style={{ color: PRIORITY_COLORS[priority], borderColor: `${PRIORITY_COLORS[priority]}66` }}
+            className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-surface-hover border focus:outline-none"
+          >
+            {PRIORITIES.map((p) => (
+              <option key={p} value={p} style={{ color: PRIORITY_COLORS[p] }}>
+                ⭐ {p}
+              </option>
+            ))}
+          </select>
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(e) => {
+              setDueDate(e.target.value);
+              if (errors.dueDate) setErrors((prev) => ({ ...prev, dueDate: undefined }));
+            }}
+            aria-invalid={!!errors.dueDate}
+            title={errors.dueDate}
+            className={cn(
+              'px-2.5 py-1.5 rounded-lg text-xs font-medium bg-surface-hover border border-border text-text focus:outline-none',
+              errors.dueDate && inputErrorClass
+            )}
+          />
           <button
             onClick={submit}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary hover:bg-primary-dim text-white font-medium text-sm transition-colors"
