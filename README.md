@@ -4,7 +4,7 @@ Um organizador pessoal que cabe no dia a dia: tarefas, compromissos, metas e foc
 
 🔗 **[Acessar o app](https://josealbertodeev.github.io/lista-de-tarefas-app/)**
 
-![Painel do Minhas Tarefas: saudação com nível, criação de tarefa, meta diária, timer pomodoro e próximos compromissos](docs/screenshot.png)
+<img width="941" height="914" alt="image" src="https://github.com/user-attachments/assets/8699586c-70c1-43ac-80ab-a696fe0ee169" />
 
 ---
 
