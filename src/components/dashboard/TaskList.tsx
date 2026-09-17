@@ -58,8 +58,8 @@ export function TaskList() {
     <div className="bg-surface border border-border rounded-2xl p-5 sm:p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-1 p-1 rounded-xl bg-surface-hover border border-border">
-          <TabButton active={tab === 'pending'} onClick={() => setTab('pending')} icon={<ListChecks size={14} />} label="Pendentes" count={totals.pending} />
-          <TabButton active={tab === 'completed'} onClick={() => setTab('completed')} icon={<CheckCircle2 size={14} />} label="Concluídas" count={totals.completed} />
+          <TabButton active={tab === 'pending'} onClick={() => setTab('pending')} icon={<ListChecks size={14} />} label="Pendentes" count={totals.pending} tone="pending" />
+          <TabButton active={tab === 'completed'} onClick={() => setTab('completed')} icon={<CheckCircle2 size={14} />} label="Concluídas" count={totals.completed} tone="done" />
         </div>
         {tab === 'completed' && totals.completed > 0 && (
           <button
@@ -120,24 +120,33 @@ function TabButton({
   icon,
   label,
   count,
+  tone,
 }: {
   active: boolean;
   onClick: () => void;
   icon: ReactNode;
   label: string;
   count: number;
+  /** Mesma linguagem de cor das linhas da lista: âmbar pendente, verde concluída. */
+  tone: 'pending' | 'done';
 }) {
+  const activeTone =
+    tone === 'done'
+      ? 'bg-surface text-emerald-400 border-emerald-500/40'
+      : 'bg-surface text-amber-400 border-amber-400/40';
+  const countTone = tone === 'done' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-400/10 text-amber-400';
+
   return (
     <button
       onClick={onClick}
       className={cn(
         'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
-        active ? 'bg-surface text-primary shadow-sm border border-border' : 'text-text-muted hover:text-text'
+        active ? `${activeTone} shadow-sm border` : 'text-text-muted hover:text-text'
       )}
     >
       {icon}
       {label}
-      <span className={cn('text-xs px-1.5 rounded-full', active ? 'bg-primary/10 text-primary' : 'bg-surface text-text-muted')}>{count}</span>
+      <span className={cn('text-xs px-1.5 rounded-full', active ? countTone : 'bg-surface text-text-muted')}>{count}</span>
     </button>
   );
 }

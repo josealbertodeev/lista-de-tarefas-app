@@ -67,7 +67,16 @@ export function Header({ view, onNavigate }: { view: AppView; onNavigate: (v: Ap
           <NotificationBell onNavigate={onNavigate} />
           <button
             onClick={() => onNavigate('settings')}
-            className="w-8 h-8 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-primary shrink-0"
+            title="Perfil e configurações"
+            aria-label="Perfil e configurações"
+            className={cn(
+              'w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors',
+              'bg-primary/20 border border-primary/40 text-primary',
+              'hover:bg-primary hover:border-primary hover:text-white',
+              // A tela de configurações não está nas abas, então o próprio avatar
+              // marca quando ela é a tela ativa.
+              view === 'settings' && 'bg-primary border-primary text-white'
+            )}
           >
             <User size={16} />
           </button>

@@ -25,7 +25,12 @@ export function GoalCard({ goal, index = 0 }: { goal: Goal; index?: number }) {
 
   return (
     <div
-      className="group bg-surface border border-border rounded-2xl p-5 shadow-sm card-rise hover-lift"
+      className={cn(
+        'group rounded-2xl p-5 shadow-sm card-rise hover-lift border',
+        // Meta fechada troca a borda neutra por verde: dá para varrer a lista e ver
+        // o que já foi conquistado sem ler o percentual de cada cartão.
+        done ? 'bg-emerald-500/[0.07] border-emerald-500/50' : 'bg-surface border-border'
+      )}
       style={{ animationDelay: `${Math.min(index, 8) * 60}ms` }}
     >
       <div className="flex items-start justify-between gap-2 mb-2">

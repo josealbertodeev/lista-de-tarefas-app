@@ -94,7 +94,7 @@ export function DayPanel({ date }: { date: string }) {
                       onClick={() => setViewing(item.data)}
                       title="Visualizar compromisso"
                       aria-label="Visualizar compromisso"
-                      className="p-1 rounded text-text-muted hover:text-primary hover:bg-surface transition-colors"
+                      className="p-1 rounded text-sky-400 hover:bg-sky-400/10 transition-colors"
                     >
                       <Eye size={13} />
                     </button>
@@ -102,7 +102,7 @@ export function DayPanel({ date }: { date: string }) {
                       onClick={() => setEditing(item.data)}
                       title="Editar compromisso"
                       aria-label="Editar compromisso"
-                      className="p-1 rounded text-text-muted hover:text-text hover:bg-surface transition-colors"
+                      className="p-1 rounded text-blue-400 hover:bg-blue-400/10 transition-colors"
                     >
                       <Pencil size={13} />
                     </button>
@@ -110,7 +110,7 @@ export function DayPanel({ date }: { date: string }) {
                       onClick={() => setRemoving(item.data)}
                       title="Excluir compromisso"
                       aria-label="Excluir compromisso"
-                      className="p-1 rounded text-text-muted hover:text-red-400 hover:bg-surface transition-colors"
+                      className="p-1 rounded text-red-400 hover:bg-red-400/10 transition-colors"
                     >
                       <Trash2 size={13} />
                     </button>

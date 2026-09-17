@@ -46,9 +46,13 @@ function TaskItemComponent({ task, dragHandleProps, isDragging, style }: TaskIte
       style={style}
       className={cn(
         'group flex items-start gap-3 p-3 rounded-xl border transition-colors',
+        // A cor da borda diz o estado da tarefa antes de qualquer leitura: âmbar
+        // para pendente, vermelho quando o prazo passou, verde para concluída.
         completed
-          ? 'bg-surface-hover/50 border-border'
-          : 'bg-surface-hover border-border hover:bg-surface hover:border-primary/30',
+          ? 'bg-emerald-500/[0.07] border-emerald-500/40'
+          : overdue
+            ? 'bg-red-500/[0.06] border-red-500/40 hover:border-red-500/70'
+            : 'bg-amber-400/[0.06] border-amber-400/40 hover:bg-amber-400/10 hover:border-amber-400/70',
         isActiveFocus && 'ring-1 ring-primary/40',
         isDragging && 'shadow-lg ring-1 ring-primary/40 bg-surface'
       )}
@@ -75,7 +79,15 @@ function TaskItemComponent({ task, dragHandleProps, isDragging, style }: TaskIte
       </button>
 
       <div className="min-w-0 flex-1">
-        <p className={cn('text-sm font-medium text-text', completed && 'line-through text-text-muted strike-animate')}>
+        <p
+          className={cn(
+            'text-sm font-medium text-text',
+            // w-fit: o risco animado é um ::after de 100% da largura e, num <p> de
+            // bloco, ele se esticava até a borda do cartão. Com fit-content a linha
+            // para no fim do texto e ainda quebra junto com um título comprido.
+            completed && 'line-through text-text-muted strike-animate w-fit max-w-full'
+          )}
+        >
           {task.title}
         </p>
         <div className="flex flex-wrap items-center gap-1.5 mt-1.5">

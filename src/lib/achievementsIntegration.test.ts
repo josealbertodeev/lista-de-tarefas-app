@@ -31,7 +31,7 @@ function evaluateNow(unlockedIds: string[] = []) {
 }
 
 beforeEach(() => {
-  useTaskStore.setState({ tasks: [], appointments: [], goals: [], lastRemoved: null, lastCompletedTaskId: null });
+  useTaskStore.setState({ tasks: [], appointments: [], goals: [], lastRemoved: null });
   useProfileStore.setState((s) => ({
     profile: { ...s.profile, level: 1, xp: 0, totalXp: 0, streakDays: 0, lastActiveDate: undefined },
     achievements: [],

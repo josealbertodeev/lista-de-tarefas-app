@@ -1,14 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTaskStore } from '../../stores/useTaskStore';
 
 const COLORS = ['#10b981', '#34d399', '#fbbf24', '#f472b6', '#60a5fa'];
 
+/**
+ * Chuva de confete para as duas conquistas do dia: concluir uma tarefa e fechar
+ * uma meta em 100%. O store avisa por um contador, não pelo id do que foi
+ * concluído — assim concluir a mesma coisa de novo volta a comemorar.
+ */
 export function Confetti() {
-  const lastCompletedTaskId = useTaskStore((s) => s.lastCompletedTaskId);
+  const celebrationTick = useTaskStore((s) => s.celebrationTick);
   const [pieces, setPieces] = useState<{ id: number; left: number; color: string; delay: number }[]>([]);
+  // Nunca comemora o valor que já estava no estado quando a tela abriu — senão o
+  // confete dispararia a cada recarregamento da página.
+  const tickAoAbrir = useRef(celebrationTick);
 
   useEffect(() => {
-    if (!lastCompletedTaskId) return;
+    if (celebrationTick === tickAoAbrir.current) return;
     const newPieces = Array.from({ length: 24 }, (_, i) => ({
       id: Date.now() + i,
       left: Math.random() * 100,
@@ -18,7 +26,7 @@ export function Confetti() {
     setPieces(newPieces);
     const timeout = setTimeout(() => setPieces([]), 1200);
     return () => clearTimeout(timeout);
-  }, [lastCompletedTaskId]);
+  }, [celebrationTick]);
 
   if (pieces.length === 0) return null;
 

@@ -23,7 +23,7 @@ export function MobileNav({ view, onNavigate }: { view: AppView; onNavigate: (v:
             onClick={() => onNavigate(tab.key)}
             className={cn(
               'flex flex-col items-center gap-0.5 px-2 py-1 text-[10px] font-medium transition-colors',
-              active ? 'text-primary' : 'text-text-muted'
+              active ? 'text-primary' : 'text-text-muted hover:text-text'
             )}
           >
             <Icon size={20} />

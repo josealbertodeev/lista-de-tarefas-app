@@ -15,7 +15,8 @@ interface TaskStoreState {
   tasks: Task[];
   appointments: Appointment[];
   goals: Goal[];
-  lastCompletedTaskId: string | null;
+  /** Contador de comemoracoes: sobe a cada tarefa concluida e a cada meta que chega a 100%. */
+  celebrationTick: number;
   lastRemoved: RemovedTasks | null;
 
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'status' | 'pomodorosCompleted' | 'subtasks'> & { subtasks?: Subtask[] }) => Task;
@@ -67,7 +68,7 @@ export const useTaskStore = create<TaskStoreState>()(
       tasks: [],
       appointments: [],
       goals: [],
-      lastCompletedTaskId: null,
+      celebrationTick: 0,
       lastRemoved: null,
 
       addTask: (input) => {
@@ -111,7 +112,7 @@ export const useTaskStore = create<TaskStoreState>()(
                 }
               : t
           ),
-          lastCompletedTaskId: becameCompleted ? id : s.lastCompletedTaskId,
+          celebrationTick: becameCompleted ? s.celebrationTick + 1 : s.celebrationTick,
         }));
       },
 
@@ -141,7 +142,7 @@ export const useTaskStore = create<TaskStoreState>()(
                 }
               : t
           ),
-          lastCompletedTaskId: completed ? id : s.lastCompletedTaskId,
+          celebrationTick: completed ? s.celebrationTick + 1 : s.celebrationTick,
         }));
       },
 
@@ -189,7 +190,7 @@ export const useTaskStore = create<TaskStoreState>()(
         }),
 
       // "Apagar todos os dados" é deliberadamente definitivo: não alimenta o desfazer.
-      clearAllTasks: () => set({ tasks: [], lastRemoved: null, lastCompletedTaskId: null }),
+      clearAllTasks: () => set({ tasks: [], lastRemoved: null }),
 
       undoRemove: () =>
         set((s) => {
@@ -231,12 +232,27 @@ export const useTaskStore = create<TaskStoreState>()(
         set((s) => ({
           goals: [...s.goals, { ...goal, id: uid(), createdAt: todayISO(), progress: goal.progress ?? 0 }],
         })),
-      updateGoal: (id, patch) => set((s) => ({ goals: s.goals.map((g) => (g.id === id ? { ...g, ...patch } : g)) })),
+      // Uma meta "concluída" é a que chega a 100%, venha isso do botão Concluir ou
+      // do último incremento da métrica. Só comemora na virada, não a cada edição
+      // de uma meta que já estava completa.
+      updateGoal: (id, patch) =>
+        set((s) => {
+          const before = s.goals.find((g) => g.id === id);
+          const completou = !!before && before.progress < 100 && (patch.progress ?? before.progress) >= 100;
+          return {
+            goals: s.goals.map((g) => (g.id === id ? { ...g, ...patch } : g)),
+            celebrationTick: completou ? s.celebrationTick + 1 : s.celebrationTick,
+          };
+        }),
       deleteGoal: (id) => set((s) => ({ goals: s.goals.filter((g) => g.id !== id) })),
     }),
     {
       name: 'minhas-tarefas-data',
       version: 1,
+      // Só os dados do usuário são salvos. `celebrationTick` e `lastRemoved`
+      // são sinais de um instante (confete, aviso de desfazer): persistidos, eles
+      // voltavam a disparar a cada recarregamento da página.
+      partialize: (s) => ({ tasks: s.tasks, appointments: s.appointments, goals: s.goals }),
       // Ponto de pouso para mudanças de formato: sem isto, acrescentar um campo a
       // Task/Appointment/Goal faria os dados já salvos serem reidratados com o formato antigo.
       migrate: (persisted) => {

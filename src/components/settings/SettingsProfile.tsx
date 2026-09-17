@@ -137,7 +137,7 @@ export function SettingsProfile() {
 
   const resetAllData = () => {
     useTaskStore.getState().clearAllTasks();
-    useTaskStore.setState({ appointments: [], goals: [], lastCompletedTaskId: null });
+    useTaskStore.setState({ appointments: [], goals: [] });
     useProfileStore.setState((s) => ({
       profile: { ...s.profile, level: 1, xp: 0, totalXp: 0, streakDays: 0, lastActiveDate: undefined },
       achievements: [],

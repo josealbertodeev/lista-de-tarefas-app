@@ -33,7 +33,12 @@ export function WelcomeBanner() {
         <div className="space-y-1">
           <h1 className="text-2xl font-bold text-text tracking-tight flex items-center flex-wrap gap-2">
             <span>
-              👋 {greeting}{name ? `, ${name}` : ''}!
+              {/* O nome é o único pedaço pessoal do cabeçalho, então ganha a cor de
+                  destaque; a saudação, que é sempre a mesma, fica no tom neutro. */}
+              👋 {greeting}
+              {name ? ', ' : ''}
+              <span className="text-primary">{name}</span>
+              !
             </span>
             <span
               style={{ '--level-glow': levelStyle.glow } as CSSProperties}
