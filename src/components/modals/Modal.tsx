@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import type { ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -29,7 +30,9 @@ export function Modal({
 
   if (!open) return null;
 
-  return (
+  // Renderizado por portal no <body>: os cards usam `will-change: transform`, que cria
+  // um contexto de empilhamento próprio e prenderia o overlay atrás dos cards vizinhos.
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div
@@ -52,7 +55,8 @@ export function Modal({
         </div>
         <div className="p-6">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -74,7 +78,7 @@ export function ConfirmDialog({
   danger?: boolean;
 }) {
   if (!open) return null;
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-sm bg-surface border border-border rounded-2xl shadow-2xl p-6 text-center">
@@ -102,6 +106,7 @@ export function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
