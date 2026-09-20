@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { CalendarClock, Plus, MapPin, Video } from 'lucide-react';
 import { useTaskStore } from '../../stores/useTaskStore';
-import { formatDatePt, addDaysISO } from '../../lib/utils';
+import { formatDayMonthPt, addDaysISO } from '../../lib/utils';
 import { useToday } from '../../lib/useToday';
 import { occurrencesBetween } from '../../lib/recurrence';
 import { NewAppointmentModal } from '../modals/NewAppointmentModal';
@@ -43,8 +43,8 @@ export function UpcomingAppointments() {
           {upcoming.map((a) => (
             <div key={a.occurrenceId} className="flex items-center gap-3 p-3 rounded-xl bg-surface-hover border border-border">
               <div className="flex flex-col items-center justify-center w-12 h-12 rounded-lg bg-surface border border-border shrink-0">
-                <span className="text-[9px] uppercase text-text-muted">{formatDatePt(a.date).split(' ')[1]}</span>
-                <span className="text-sm font-bold text-text">{formatDatePt(a.date).split(' ')[0]}</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">{formatDayMonthPt(a.date).month}</span>
+                <span className="text-base font-bold leading-none text-text">{formatDayMonthPt(a.date).day}</span>
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-text truncate">{a.title}</p>

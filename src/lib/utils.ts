@@ -66,6 +66,18 @@ export function formatDatePt(iso?: string): string {
   return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
 }
 
+/** Dia e mês separados, para o quadradinho de data dos cards. */
+export function formatDayMonthPt(iso?: string): { day: string; month: string } {
+  if (!iso) return { day: '', month: '' };
+  const [y, m, d] = iso.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  return {
+    day: String(d).padStart(2, '0'),
+    // pt-BR devolve "set." — tiramos o ponto; a caixa alta fica no CSS.
+    month: date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''),
+  };
+}
+
 export function formatDateBR(iso?: string): string {
   if (!iso) return "";
   const [y, m, d] = iso.split("-");
